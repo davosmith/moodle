@@ -307,6 +307,18 @@ function print_category_edit($category, $displaylist, $parentslist, $depth=-1, $
         $str->spacer = '<img src="'.$CFG->wwwroot.'/pix/spacer.gif" class="iconsmall" alt="" /> ';
     }
 
+    static $cats = null;
+    if (is_null($cats)) {
+        $allcats = get_categories('none', NULL, false);
+        $cats = array();
+        foreach ($allcats as $cat) {
+            if (!array_key_exists($cat->parent, $cats)) {
+                $cats[$cat->parent] = array();
+            }
+            $cats[$cat->parent][] = $cat;
+        }
+    }
+
     if (!empty($category)) {
 
         if (!isset($category->context)) {
@@ -374,7 +386,8 @@ function print_category_edit($category, $displaylist, $parentslist, $depth=-1, $
         $category->id = '0';
     }
 
-    if ($categories = get_categories($category->id)) {   // Print all the children recursively
+    if (array_key_exists($category->id, $cats)) {   // Print all the children recursively
+        $categories = $cats[$category->id];
         $countcats = count($categories);
         $count = 0;
         $first = true;
@@ -390,6 +403,12 @@ function print_category_edit($category, $displaylist, $parentslist, $depth=-1, $
 
             print_category_edit($cat, $displaylist, $parentslist, $depth+1, $up, $down);
         }
+    }
+
+    if ($category->id == 0) {
+        // A bit of clean up
+        unset($cats);
+        $cats = null;
     }
 }
 
