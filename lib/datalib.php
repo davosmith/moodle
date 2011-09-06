@@ -1198,9 +1198,11 @@ function get_courses_search($searchterms, $sort='fullname ASC', $page=0, $record
  * @param string $parent The parent category if any
  * @param string $sort the sortorder
  * @param bool   $shallow - set to false to get the children too
+ * @param bool   $coursesortorder - include max/min/count of sortorder for courses
+ *               in this category
  * @return array of categories
  */
-function get_categories($parent='none', $sort=NULL, $shallow=true) {
+function get_categories($parent='none', $sort=NULL, $shallow=true, $coursesortorder=false) {
     global $CFG;
 
     if ($sort === NULL) {
@@ -1211,13 +1213,24 @@ function get_categories($parent='none', $sort=NULL, $shallow=true) {
         $sort = "ORDER BY $sort";
     }
 
+    if ($coursesortorder) {
+        $extraselect = ', cdata.min as min, cdata.max as max, cdata.count as count ';
+        $extrajoin = " LEFT JOIN (SELECT c.category, MIN(c.sortorder) AS min, MAX(c.sortorder) AS max, COUNT(c.sortorder) AS count
+                        FROM {$CFG->prefix}course c GROUP BY c.category) as cdata ON cdata.category=cc.id ";
+    } else {
+        $extraselect = '';
+        $extrajoin = '';
+    }
+
     if ($parent === 'none') {
         $sql = "SELECT cc.*,
                       ctx.id AS ctxid, ctx.path AS ctxpath,
                       ctx.depth AS ctxdepth, ctx.contextlevel AS ctxlevel
+                      $extraselect
                 FROM {$CFG->prefix}course_categories cc
                 JOIN {$CFG->prefix}context ctx
                   ON cc.id=ctx.instanceid AND ctx.contextlevel=".CONTEXT_COURSECAT."
+                $extrajoin
                 $sort";
     } elseif ($shallow) {
         $parent = (int)$parent;
@@ -1294,15 +1307,20 @@ function fix_course_sortorder($categoryid=0, $n=0, $safe=0, $depth=0, $path='') 
     $catgap    = 1000; // "standard" category gap
     $tolerance = 200;  // how "close" categories can get
 
+    static $allcategories = null;
+    if (!$allcategories) {
+        $allcategories = get_categories('none', 'parent', false, true);
+    }
+
     if ($categoryid > 0){
         // update depth and path
-        $cat   = get_record('course_categories', 'id', $categoryid);
+        $cat   = $allcategories[$categoryid];
         if ($cat->parent == 0) {
             $depth = 0;
             $path  = '';
         } else if ($depth == 0 ) { // doesn't make sense; get from DB
             // this is only called if the $depth parameter looks dodgy
-            $parent = get_record('course_categories', 'id', $cat->parent);
+            $parent = $allcategories[$cat->parent];
             $path  = $parent->path;
             $depth = $parent->depth;
         }
@@ -1311,23 +1329,23 @@ function fix_course_sortorder($categoryid=0, $n=0, $safe=0, $depth=0, $path='') 
 
         if ($cat->path !== $path) {
             set_field('course_categories', 'path',  addslashes($path),  'id', $categoryid);
+            $allcategories[$categoryid]->path = $path;
         }
         if ($cat->depth != $depth) {
             set_field('course_categories', 'depth', $depth, 'id', $categoryid);
+            $allcategories[$categoryid]->depth = $depth;
         }
     }
 
     // get some basic info about courses in the category
-    $info = get_record_sql('SELECT MIN(sortorder) AS min,
-                                   MAX(sortorder) AS max,
-                                   COUNT(sortorder)  AS count
-                            FROM ' . $CFG->prefix . 'course
-                            WHERE category=' . $categoryid);
-    if (is_object($info)) { // no courses?
-        $max   = $info->max;
-        $count = $info->count;
-        $min   = $info->min;
-        unset($info);
+    if ($categoryid && $allcategories[$categoryid]->max != null) {
+        $max = $allcategories[$categoryid]->max;
+        $min = $allcategories[$categoryid]->min;
+        $count = $allcategories[$categoryid]->count;
+    } else {
+        $max = 0;
+        $min = 0;
+        $count = 0;
     }
 
     if ($categoryid > 0 && $n==0) { // only passed category so don't shift it
@@ -1397,19 +1415,33 @@ function fix_course_sortorder($categoryid=0, $n=0, $safe=0, $depth=0, $path='') 
                 }
             }
         }
+
+        $max = get_field_sql("SELECT MAX(sortorder) from {$CFG->prefix}course WHERE category=$categoryid");
     }
-    set_field('course_categories', 'coursecount', $count, 'id', $categoryid);
+    if ($categoryid && $allcategories[$categoryid]->coursecount != $count) {
+        set_field('course_categories', 'coursecount', $count, 'id', $categoryid);
+        $allcategories[$categoryid]->coursecount = $count;
+    }
 
     // $n could need updating
-    $max = get_field_sql("SELECT MAX(sortorder) from {$CFG->prefix}course WHERE category=$categoryid");
     if ($max > $n) {
         $n = $max;
     }
 
-    if ($categories = get_categories($categoryid)) {
-        foreach ($categories as $category) {
+    $found = false;
+    foreach ($allcategories as $category) {
+        if ($category->parent == $categoryid) {
+            $found = true;
             $n = fix_course_sortorder($category->id, $n, $safe, $depth, $path);
+        } else if ($found) {
+            break; // Sorted by $parentid, so can exit once we've run out of parentid elements
         }
+    }
+
+    // Do some cleanup at the end
+    if ($categoryid == 0) {
+        unset($allcategories);
+        $allcategories = null;
     }
 
     return $n+1;
