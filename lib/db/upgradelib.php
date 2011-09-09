@@ -688,8 +688,8 @@ function upgrade_fix_incorrect_mnethostids() {
     $hosts = get_records_menu('mnet_host', '', '', '', 'id, id AS id2');
     $hosts_str = implode(', ', $hosts);
 
-    $sql = "SELECT id
-            FROM {$CFG->prefix}user u1
+    $sql = "UPDATE {$CFG->prefix}user u1
+              SET mnethostid = $current_mnet_localhost_host->id
             WHERE u1.mnethostid NOT IN ($hosts_str)
               AND NOT EXISTS (
                   SELECT 'x'
@@ -697,11 +697,7 @@ function upgrade_fix_incorrect_mnethostids() {
                    WHERE u2.username = u1.username
                      AND u2.mnethostid = $current_mnet_localhost_host->id)";
 
-    $rs = get_recordset_sql($sql);
-    while ($rec = rs_fetch_next_record($rs)) {
-        set_field('user', 'mnethostid', $current_mnet_localhost_host->id, 'id', $rec->id);
-    }
-    rs_close($rs);
+    execute_sql($sql, false);
 
     // fix up any host records that have incorrect ids
     set_field_select('mnet_host', 'applicationid', $moodleapplicationid, "id = $current_mnet_localhost_host->id or id = $current_mnet_all_hosts_host->id");
