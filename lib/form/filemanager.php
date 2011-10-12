@@ -239,7 +239,7 @@ class form_filemanaer_x {
  * @return string HTML fragment
  */
 function form_filemanager_render($options) {
-    global $CFG, $OUTPUT, $PAGE;
+    global $CFG, $OUTPUT, $PAGE, $DB;
 
     $fm = new form_filemanaer_x($options); //TODO: this is unnecessary here, the nested options are getting too complex
 
@@ -273,7 +273,16 @@ function form_filemanager_render($options) {
         $extra = '';
     }
 
+    $options->enabledndupload = isset($CFG->enabledndupload) && $CFG->enabledndupload;
+    if ($options->enabledndupload) {
+        $options->upload_repo = $DB->get_field('repository', 'id', array('type'=>'upload'));
+        if (!$options->upload_repo) {
+            $options->enabledndupload = false;
+        }
+    }
+
     $maxsize = get_string('maxfilesize', 'moodle', display_size(get_max_upload_file_size($CFG->maxbytes, $course_maxbytes, $options->maxbytes)));
+    $strdndenabled = get_string('dndenabled', 'moodle').$OUTPUT->help_icon('dndenabled');
     $html .= <<<FMHTML
 <div class="filemanager-loading mdl-align" id='filemanager-loading-{$client_id}'>
 $icon_progress
@@ -285,6 +294,7 @@ $icon_progress
         <input type="button" class="fm-btn-mkdir" id="btncrt-{$client_id}" onclick="return false" value="{$strmakedir}" />
         <input type="button" class="fm-btn-download" id="btndwn-{$client_id}" onclick="return false" {$extra} value="{$strdownload}" />
         <span> $maxsize </span>
+                                                                                                                    <span id="dndenabled-{$client_id}" style="display: none"> - $strdndenabled </span>
     </div>
     <div class="filemanager-container" id="filemanager-{$client_id}">
         <ul id="draftfiles-{$client_id}" class="fm-filelist">
@@ -313,7 +323,8 @@ FMHTML;
              array('cannotdeletefile', 'error'), array('confirmdeletefile', 'repository'),
              array('nopathselected', 'repository'), array('popupblockeddownload', 'repository'),
              array('draftareanofiles', 'repository'), array('path', 'moodle'), array('setmainfile', 'repository'),
-             array('moving', 'repository'), array('files', 'moodle')
+             array('moving', 'repository'), array('files', 'moodle'),
+             array('uploadformlimit', 'moodle')
         )
     );
     $PAGE->requires->js_module($module);
