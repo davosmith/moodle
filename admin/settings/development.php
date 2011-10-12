@@ -17,6 +17,8 @@ if ($hassiteconfig) { // speedup for non-admins, add all caps used on this page
     $temp->add(new admin_setting_configcheckbox('enablesafebrowserintegration', get_string('enablesafebrowserintegration', 'admin'), get_string('configenablesafebrowserintegration', 'admin'), 0));
     $temp->add(new admin_setting_configcheckbox('enablegroupmembersonly', get_string('enablegroupmembersonly', 'admin'), get_string('configenablegroupmembersonly', 'admin'), 0));
 
+    $temp->add(new admin_setting_configcheckbox('enabledndupload', get_string('enabledndupload', 'admin'), get_string('configenabledndupload', 'admin'), 0));
+
     $ADMIN->add('experimental', $temp);
 
     // "debugging" settingpage
