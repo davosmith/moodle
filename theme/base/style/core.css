@@ -532,7 +532,8 @@ body.tag .managelink {padding: 5px;}
 .fm-file-entry{border: 1px solid red;}
 .fm-operation {font-weight: bold;}
 
-.filemanager-container.dndupload-over {background: #8EF947;}
+.filemanager-container.dndupload-over,
+.filepicker-filelist.dndupload-over {background: #8EF947;}
 
 /*
  * Backup and Restore CSS

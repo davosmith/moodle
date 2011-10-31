@@ -50,7 +50,7 @@ class MoodleQuickForm_filepicker extends HTML_QuickForm_input {
     }
 
     function toHtml() {
-        global $CFG, $COURSE, $USER, $PAGE, $OUTPUT;
+        global $CFG, $COURSE, $USER, $PAGE, $OUTPUT, $DB;
         $id     = $this->_attributes['id'];
         $elname = $this->_attributes['name'];
 
@@ -85,10 +85,18 @@ class MoodleQuickForm_filepicker extends HTML_QuickForm_input {
         $fp = new file_picker($args);
         $options = $fp->options;
         $options->context = $PAGE->context;
+
+        $options->enabledndupload = true;
+        $options->upload_repo = $DB->get_field('repository', 'id', array('type'=>'upload', 'visible'=>1));
+        if (!$options->upload_repo) { // Only allow dndupload if 'upload' repository exists and is visible
+            $options->enabledndupload = false;
+        }
+
         $html .= $OUTPUT->render($fp);
         $html .= '<input type="hidden" name="'.$elname.'" id="'.$id.'" value="'.$draftitemid.'" class="filepickerhidden"/>';
 
-        $module = array('name'=>'form_filepicker', 'fullpath'=>'/lib/form/filepicker.js', 'requires'=>array('core_filepicker', 'node', 'node-event-simulate'));
+        $module = array('name'=>'form_filepicker', 'fullpath'=>'/lib/form/filepicker.js', 'requires'=>array('core_filepicker', 'node', 'node-event-simulate'),
+                        'strings'=>array(array('uploadformlimit', 'moodle')));
         $PAGE->requires->js_init_call('M.form_filepicker.init', array($fp->options), true, $module);
 
         $nonjsfilepicker = new moodle_url('/repository/draftfiles_manager.php', array(
