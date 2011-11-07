@@ -1903,6 +1903,7 @@ class core_renderer extends renderer_base {
         $strsaved = get_string('filesaved', 'repository');
         $straddfile = get_string('openpicker', 'repository');
         $strloading  = get_string('loading', 'repository');
+        $strdndenabled = get_string('dndenabled', 'moodle');
         $icon_progress = $OUTPUT->pix_icon('i/loading_small', $strloading).'';
 
         $currentfile = $options->currentfile;
@@ -1932,6 +1933,7 @@ $icon_progress
     <div>
         <input type="button" id="filepicker-button-{$client_id}" value="{$straddfile}"{$buttonname}/>
         <span> $maxsize </span>
+             <span id="dndenabled-{$client_id}" style="display: none"> - $strdndenabled </span>
     </div>
 EOD;
         if ($options->env != 'url') {
