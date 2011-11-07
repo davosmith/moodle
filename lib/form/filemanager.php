@@ -274,8 +274,8 @@ function form_filemanager_render($options) {
     }
 
     $options->enabledndupload = true;
-    $options->upload_repo = $DB->get_field('repository', 'id', array('type'=>'upload'));
-    if (!$options->upload_repo) {
+    $options->upload_repo = $DB->get_field('repository', 'id', array('type'=>'upload', 'visible'=>1));
+    if (!$options->upload_repo) { // Only allow dndupload if 'upload' repository exists and is visible
         $options->enabledndupload = false;
     }
 
@@ -292,7 +292,7 @@ $icon_progress
         <input type="button" class="fm-btn-mkdir" id="btncrt-{$client_id}" onclick="return false" value="{$strmakedir}" />
         <input type="button" class="fm-btn-download" id="btndwn-{$client_id}" onclick="return false" {$extra} value="{$strdownload}" />
         <span> $maxsize </span>
-                                                                                                                    <span id="dndenabled-{$client_id}" style="display: none"> - $strdndenabled </span>
+        <span id="dndenabled-{$client_id}" style="display: none"> - $strdndenabled </span>
     </div>
     <div class="filemanager-container" id="filemanager-{$client_id}">
         <ul id="draftfiles-{$client_id}" class="fm-filelist">
@@ -312,7 +312,7 @@ FMHTML;
     $module = array(
         'name'=>'form_filemanager',
         'fullpath'=>'/lib/form/filemanager.js',
-        'requires' => array('core_filepicker', 'base', 'io-base', 'node', 'json', 'yui2-button', 'yui2-container', 'yui2-layout', 'yui2-menu', 'yui2-treeview'),
+        'requires' => array('core_filepicker', 'base', 'io-base', 'node', 'json', 'yui2-button', 'yui2-container', 'yui2-layout', 'yui2-menu', 'yui2-treeview', 'core_dndupload'),
         'strings' => array(array('loading', 'repository'), array('nomorefiles', 'repository'), array('confirmdeletefile', 'repository'),
              array('add', 'repository'), array('accessiblefilepicker', 'repository'), array('move', 'moodle'),
              array('cancel', 'moodle'), array('download', 'moodle'), array('ok', 'moodle'),
@@ -321,8 +321,7 @@ FMHTML;
              array('cannotdeletefile', 'error'), array('confirmdeletefile', 'repository'),
              array('nopathselected', 'repository'), array('popupblockeddownload', 'repository'),
              array('draftareanofiles', 'repository'), array('path', 'moodle'), array('setmainfile', 'repository'),
-             array('moving', 'repository'), array('files', 'moodle'),
-             array('uploadformlimit', 'moodle')
+             array('moving', 'repository'), array('files', 'moodle')
         )
     );
     $PAGE->requires->js_module($module);
