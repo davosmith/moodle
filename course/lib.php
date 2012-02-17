@@ -28,6 +28,7 @@ defined('MOODLE_INTERNAL') || die;
 
 require_once($CFG->libdir.'/completionlib.php');
 require_once($CFG->libdir.'/filelib.php');
+require_once($CFG->dirroot.'/course/dnduploadlib.php');
 
 define('COURSE_MAX_LOGS_PER_PAGE', 1000);       // records
 define('COURSE_MAX_RECENT_PERIOD', 172800);     // Two days, in seconds
@@ -4403,13 +4404,15 @@ function course_page_type_list($pagetype, $parentcontext, $currentcontext) {
  * @param integer $id The ID of the course being applied to
  * @param array $modules An array containing the names of the modules in
  *                       use on the page
+ * @param array $allmodules An array containing the names of the enabled (visible)
+ *                       modules on this site
  * @param object $config An object containing configuration parameters for ajax modules including:
  *          * resourceurl   The URL to post changes to for resource changes
  *          * sectionurl    The URL to post changes to for section changes
  *          * pageparams    Additional parameters to pass through in the post
  * @return void
  */
-function include_course_ajax($course, $modules = array(), $config = null) {
+function include_course_ajax($course, $modules = array(), $allmodules = null, $config = null) {
     global $PAGE, $CFG, $USER;
 
     // Ensure that ajax should be included
@@ -4515,6 +4518,9 @@ function include_course_ajax($course, $modules = array(), $config = null) {
     foreach ($modules as $module => $modname) {
         $PAGE->requires->string_for_js('pluginname', $module);
     }
+
+    // Load drag and drop upload AJAX.
+    dndupload_add_to_course($course, $allmodules);
 }
 
 /**
