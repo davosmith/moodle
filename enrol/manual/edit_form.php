@@ -62,6 +62,12 @@ class enrol_manual_edit_form extends moodleform {
         $mform->addHelpButton('expirythreshold', 'expirythreshold', 'core_enrol');
         $mform->disabledIf('expirythreshold', 'expirynotify', 'eq', 0);
 
+        $mform->addElement('advcheckbox', 'customint4', get_string('sendcoursewelcomemessage', 'enrol_manual'));
+        $mform->setDefault('customint4', $plugin->get_config('sendcoursewelcomemessage'));
+        $mform->addHelpButton('customint4', 'sendcoursewelcomemessage', 'enrol_manual');
+
+        $mform->addElement('textarea', 'customtext1', get_string('customwelcomemessage', 'enrol_manual'), array('cols'=>'60', 'rows'=>'8'));
+
         $mform->addElement('hidden', 'courseid');
         $mform->setType('courseid', PARAM_INT);
 

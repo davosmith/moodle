@@ -167,8 +167,161 @@ class enrol_manual_plugin extends enrol_plugin {
             'expirynotify'    => $expirynotify,
             'notifyall'       => $notifyall,
             'expirythreshold' => $this->get_config('expirythreshold', 86400),
+            'customint4'      => $this->get_config('sendcoursewelcomemessage'),
         );
         return $this->add_instance($course, $fields);
+    }
+
+    /**
+     * Send welcome email to specified user
+     *
+     * @param stdClass $instance
+     * @param stdClass $user user record
+     * @return void
+     */
+    protected function email_welcome_message($instance, $user) {
+        global $CFG, $DB;
+
+        $course = $DB->get_record('course', array('id'=>$instance->courseid), '*', MUST_EXIST);
+        $context = context_course::instance($course->id);
+
+        $a = new stdClass();
+        $a->coursename = format_string($course->fullname, true, array('context'=>$context));
+        $a->profileurl = "$CFG->wwwroot/user/view.php?id=$user->id&course=$course->id";
+
+        if (trim($instance->customtext1) !== '') {
+            $message = $instance->customtext1;
+            $message = str_replace('{$a->coursename}', $a->coursename, $message);
+            $message = str_replace('{$a->profileurl}', $a->profileurl, $message);
+            if (strpos($message, '<') === false) {
+                // Plain text only.
+                $messagetext = $message;
+                $messagehtml = text_to_html($messagetext, null, false, true);
+            } else {
+                // This is most probably the tag/newline soup known as FORMAT_MOODLE.
+                $messagehtml = format_text($message, FORMAT_MOODLE, array('context'=>$context, 'para'=>false, 'newlines'=>true, 'filter'=>true));
+                $messagetext = html_to_text($messagehtml);
+            }
+        } else {
+            $messagetext = get_string('welcometocoursetext', 'enrol_manual', $a);
+            $messagehtml = text_to_html($messagetext, null, false, true);
+        }
+
+        $subject = get_string('welcometocourse', 'enrol_manual', format_string($course->fullname, true, array('context'=>$context)));
+
+        $rusers = array();
+        if (!empty($CFG->coursecontact)) {
+            $croles = explode(',', $CFG->coursecontact);
+            list($sort, $sortparams) = users_order_by_sql('u');
+            $rusers = get_role_users($croles, $context, true, '', 'r.sortorder ASC, ' . $sort, null, '', '', '', '', $sortparams);
+        }
+        if ($rusers) {
+            $contact = reset($rusers);
+        } else {
+            $contact = core_user::get_support_user();
+        }
+
+        // Directly emailing welcome message rather than using messaging.
+        email_to_user($user, $contact, $subject, $messagetext, $messagehtml);
+    }
+
+    /**
+     * Enrol manual cron support
+     */
+    public function send_welcome_messages() {
+        global $DB;
+
+        $emailqueue = $DB->get_records('enrol_manual_email');
+        if (empty($emailqueue)) {
+            return; // Nothing to do
+        }
+
+        $emailcount = 0;
+        foreach ($emailqueue as $email) {
+            $instance = $DB->get_record('enrol', array('id' => $email->instanceid));
+            $user = $DB->get_record('user', array('id' => $email->userid), 'id, firstname, lastname, email');
+            if ($user && $instance) {
+                $this->email_welcome_message($instance, $user);
+                $emailcount++;
+            }
+
+            // This would be more efficiently done at the end - but there is a chance
+            // that a user could be enroled whilst this loop is running, who would not get the welcome email
+            $DB->delete_records('enrol_manual_email', array('id' => $email->id));
+        }
+
+        if ($emailcount) {
+            mtrace("Sent course welcome emails to $emailcount users");
+        }
+    }
+
+    /**
+     * Queue a welcome email to send next time cron runs
+     *
+     * @param int $instanceid the id of the enrolment instance being used
+     * @param int $userid the id of the user to send a welcome message to
+     */
+    protected function queue_welcome_message($instanceid, $userid) {
+        global $DB;
+
+        if ($DB->record_exists('enrol_manual_email', array('instanceid' => $instanceid,
+                                                           'userid' => $userid))) {
+            return;
+        }
+
+        $ins = new stdClass();
+        $ins->instanceid = $instanceid;
+        $ins->userid = $userid;
+        $DB->insert_record('enrol_manual_email', $ins);
+    }
+
+    /**
+     * Remove a welcome message (if it exists) from the queue
+     *
+     * @param int $instanceid the id of the enrolment instance being used
+     * @param int $userid the id of the user to no longer send a welcome message to
+     */
+    protected function unqueue_welcome_message($instanceid, $userid) {
+        global $DB;
+
+        $DB->delete_records('enrol_manual_email', array('instanceid' => $instanceid,
+                                                        'userid' => $userid));
+    }
+
+    /**
+     * Enrol user into course via enrol instance.
+     *
+     * @param stdClass $instance
+     * @param int $userid
+     * @param int $roleid optional role id
+     * @param int $timestart 0 means unknown
+     * @param int $timeend 0 means forever
+     * @param int $status default to ENROL_USER_ACTIVE for new enrolments, no change by default in updates
+     * @return void
+     */
+    public function enrol_user(stdClass $instance, $userid, $roleid = NULL, $timestart = 0, $timeend = 0, $status = NULL, $recovergrades = NULL) {
+        global $DB;
+
+        $alreadyenroled = $DB->record_exists('user_enrolments', array('enrolid' => $instance->id, 'userid' => $userid));
+        parent::enrol_user($instance, $userid, $roleid, $timestart, $timeend, $status, $recovergrades);
+        if (!$alreadyenroled && $instance->customint4) {
+            // Don't email immediately - give the admin a chance to remove users
+            // who were added by mistake
+            $this->queue_welcome_message($instance->id, $userid);
+        }
+    }
+
+    /**
+     * Unenrol user from course,
+     * the last unenrolment removes all remaining roles.
+     *
+     * @param stdClass $instance
+     * @param int $userid
+     * @return void
+     */
+    public function unenrol_user(stdClass $instance, $userid) {
+        parent::unenrol_user($instance, $userid);
+        $this->unqueue_welcome_message($instance->id, $userid);
     }
 
     /**
@@ -285,6 +438,7 @@ class enrol_manual_plugin extends enrol_plugin {
         $trace = new text_progress_trace();
         $this->sync($trace, null);
         $this->send_expiry_notifications($trace);
+        $this->send_welcome_messages();
     }
 
     /**

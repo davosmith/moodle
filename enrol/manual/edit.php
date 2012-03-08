@@ -91,6 +91,8 @@ if ($mform->is_cancelled()) {
         $instance->expirynotify    = $data->expirynotify;
         $instance->notifyall       = $data->notifyall;
         $instance->expirythreshold = $data->expirythreshold;
+        $instance->customint4      = $data->customint4; // Send course welcome message.
+        $instance->customtext1     = $data->customtext1; // Custom welcome message.
         $instance->timemodified    = time();
 
         $DB->update_record('enrol', $instance);
@@ -109,7 +111,9 @@ if ($mform->is_cancelled()) {
             'enrolperiod'     => $data->enrolperiod,
             'expirynotify'    => $data->expirynotify,
             'notifyall'       => $data->notifyall,
-            'expirythreshold' => $data->expirythreshold);
+            'expirythreshold' => $data->expirythreshold,
+            'customint4'      => $data->customint4,
+            'customtext1'     => $data->customtext1);
         $plugin->add_instance($course, $fields);
     }
 

@@ -27,6 +27,7 @@ $string['altertimeend'] = 'Alter end time';
 $string['altertimestart'] = 'Alter start time';
 $string['assignrole'] = 'Assign role';
 $string['confirmbulkdeleteenrolment'] = 'Are you sure you want to delete these users enrolments?';
+$string['customwelcomemessage'] = 'Custom welcome message';
 $string['defaultperiod'] = 'Default enrolment duration';
 $string['defaultperiod_desc'] = 'Default length of time that the enrolment is valid. If set to zero, the enrolment duration will be unlimited by default.';
 $string['defaultperiod_help'] = 'Default length of time that the enrolment is valid, starting with the moment the user is enrolled. If disabled, the enrolment duration will be unlimited by default.';
@@ -56,6 +57,8 @@ $string['manual:unenrolself'] = 'Unenrol self from the course';
 $string['messageprovider:expiry_notification'] = 'Manual enrolment expiry notifications';
 $string['pluginname'] = 'Manual enrolments';
 $string['pluginname_desc'] = 'The manual enrolments plugin allows users to be enrolled manually via a link in the course administration settings, by a user with appropriate permissions such as a teacher. The plugin should normally be enabled, since certain other enrolment plugins, such as self enrolment, require it.';
+$string['sendcoursewelcomemessage'] = 'Send course welcome message';
+$string['sendcoursewelcomemessage_help'] = 'If enabled, users receive a welcome message via email when they are manually enroled in a course.';
 $string['status'] = 'Enable manual enrolments';
 $string['status_desc'] = 'Allow course access of internally enrolled users. This should be kept enabled in most cases.';
 $string['status_help'] = 'This setting determines whether users can be enrolled manually, via a link in the course administration settings, by a user with appropriate permissions such as a teacher.';
@@ -69,3 +72,9 @@ $string['unenrolusers'] = 'Unenrol users';
 $string['wscannotenrol'] = 'Plugin instance cannot manually enrol a user in the course id = {$a->courseid}';
 $string['wsnoinstance'] = 'Manual enrolment plugin instance doesn\'t exist or is disabled for the course (id = {$a->courseid})';
 $string['wsusercannotassign'] = 'You don\'t have the permission to assign this role ({$a->roleid}) to this user ({$a->userid}) in this course({$a->courseid}).';
+$string['welcometocourse'] = 'Welcome to {$a}';
+$string['welcometocoursetext'] = 'Welcome to {$a->coursename}!
+
+If you have not done so already, you should edit your profile page so that we can learn more about you:
+
+  {$a->profileurl}';

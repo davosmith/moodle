@@ -66,6 +66,9 @@ if ($ADMIN->fulltree) {
             get_string('defaultrole', 'role'), '', $student->id, $options));
     }
 
+    $settings->add(new admin_setting_configcheckbox('enrol_self/sendcoursewelcomemessage',
+        get_string('sendcoursewelcomemessage', 'enrol_manual'), get_string('sendcoursewelcomemessage_help', 'enrol_manual'), 1));
+
     $settings->add(new admin_setting_configduration('enrol_manual/enrolperiod',
         get_string('defaultperiod', 'enrol_manual'), get_string('defaultperiod_desc', 'enrol_manual'), 0));
 

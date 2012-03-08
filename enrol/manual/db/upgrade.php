@@ -53,8 +53,29 @@ function xmldb_enrol_manual_upgrade($oldversion) {
     // Moodle v2.5.0 release upgrade line.
     // Put any upgrade step following this.
 
+    if ($oldversion < 2013050101) {
+        // Define table enrol_manual_email to be created
+        $table = new xmldb_table('enrol_manual_email');
+
+        // Adding fields to table enrol_manual_email
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('instanceid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+
+        // Adding keys to table enrol_manual_email
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+        $table->add_key('instanceid', XMLDB_KEY_FOREIGN, array('instanceid'), 'enrol', array('id'));
+        $table->add_key('userid', XMLDB_KEY_FOREIGN, array('userid'), 'user', array('id'));
+
+        // Conditionally launch create table for enrol_manual_email
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // manual savepoint reached
+        upgrade_plugin_savepoint(true, 2013050101, 'enrol', 'manual');
+    }
 
     return true;
 }
-
 
