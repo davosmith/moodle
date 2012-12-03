@@ -196,6 +196,39 @@ function xmldb_assign_upgrade($oldversion) {
         upgrade_mod_savepoint(true, 2012082400, 'assign');
     }
 
+    if ($oldversion < 2012112400) {
+
+        // Define field submissionnum to be added to assign_submission
+        $table = new xmldb_table('assign_submission');
+        $field = new xmldb_field('submissionnum', XMLDB_TYPE_INTEGER, '10', null, null, null, '1', 'groupid');
+
+        // Conditionally launch add field submissionnum
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // assign savepoint reached
+        upgrade_mod_savepoint(true, 2012112400, 'assign');
+    }
+
+    if ($oldversion < 2012112600) {
+
+        // Define field resubmission to be added to assign
+        $table = new xmldb_table('assign');
+
+        $field = new xmldb_field('resubmission', XMLDB_TYPE_INTEGER, '4', null, null, null, '0', 'revealidentities');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $field = new xmldb_field('maxresubmission', XMLDB_TYPE_INTEGER, '5', null, null, null, '3', 'resubmission');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // assign savepoint reached
+        upgrade_mod_savepoint(true, 2012112600, 'assign');
+    }
 
     return true;
 }

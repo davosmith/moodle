@@ -785,6 +785,30 @@ class mod_assign_renderer extends plugin_renderer_base {
         return $o;
     }
 
+    protected function render_assign_submissionnum_selector(assign_submissionnum_selector $subnum) {
+        $o = '';
+
+        if ($subnum->count > 1) {
+            $params = $subnum->assignment->get_return_params();
+            $params['action'] = $subnum->assignment->get_return_action();
+            $params['id'] = $subnum->assignment->get_course_module()->id;
+            $url = new moodle_url('/mod/assign/view.php', $params);
+
+            $o .= get_string('viewsubmissionnum', 'mod_assign').' ';
+            for ($i = 1; $i <= $subnum->count; $i++) {
+                if ($subnum->currentnum == $i) {
+                    $o .= $i.' ';
+                } else {
+                    $url->param('submissionnum', $i);
+                    $o .= html_writer::link($url, $i).' ';
+                }
+            }
+            $o = html_writer::tag('span', $o, array('class' => 'assign_submissionnum'));
+        }
+
+        return $o;
+    }
+
 
 
     /**

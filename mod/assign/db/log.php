@@ -26,6 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $logs = array(
     array('module'=>'assign', 'action'=>'add', 'mtable'=>'assign', 'field'=>'name'),
+    array('module'=>'assign', 'action'=>'add resubmission', 'mtable'=>'assign', 'field'=>'name'),
     array('module'=>'assign', 'action'=>'delete mod', 'mtable'=>'assign', 'field'=>'name'),
     array('module'=>'assign', 'action'=>'download all submissions', 'mtable'=>'assign', 'field'=>'name'),
     array('module'=>'assign', 'action'=>'grade submission', 'mtable'=>'assign', 'field'=>'name'),

@@ -612,3 +612,16 @@ class assign_files implements renderable {
         }
     }
 }
+
+class assign_submissionnum_selector implements renderable {
+
+    public $assignment;
+    public $currentnum;
+    public $count;
+
+    public function __construct(assign $assignment, $currentnum, $count) {
+        $this->assignment = $assignment;
+        $this->currentnum = $currentnum;
+        $this->count = $count;
+    }
+}

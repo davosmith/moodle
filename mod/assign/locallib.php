@@ -73,6 +73,10 @@ require_once($CFG->libdir . '/portfolio/caller.php');
  */
 class assign {
 
+    const RESUBMISSION_NONE = 0;
+    const RESUBMISSION_MANUAL = 1;
+    const RESUBMISSION_GRADE = 2;
+    const RESUBMISSION_FAILEDGRADE = 3;
 
     /** @var stdClass the assignment record that contains the global settings for this assign instance */
     private $instance;
@@ -379,7 +383,12 @@ class assign {
         } else if ($action == 'revealidentitiesconfirm') {
             $this->process_reveal_identities();
             $action = 'grading';
+        } else if ($action == 'addresubmission') {
+            $this->process_add_resubmission();
+            $action = 'grading';
         }
+
+        $this->update_current_submissionnum();
 
         $returnparams = array('rownum'=>optional_param('rownum', 0, PARAM_INT));
         $this->register_return_link($action, $returnparams);
@@ -1941,10 +1950,11 @@ class assign {
      * recorded separately.
      *
      * @param int $userid The id of the user whose submission we want or 0 in which case USER->id is used
-     * @param bool $create optional Defaults to false. If set to true a new submission object will be created in the database
+     * @param bool $create If set to true a new submission object will be created in the database
+     * @param int $submissionnum optional If not provided, then the most recent submission is returned.
      * @return stdClass The submission
      */
-    public function get_user_submission($userid, $create) {
+    public function get_user_submission($userid, $create, $submissionnum = null) {
         global $DB, $USER;
 
         if (!$userid) {
@@ -1952,6 +1962,11 @@ class assign {
         }
         // If the userid is not null then use userid.
         $params = array('assignment'=>$this->get_instance()->id, 'userid'=>$userid, 'groupid'=>0);
+        if (!is_null($submissionnum)) {
+            $params['submissionnum'] = $submissionnum;
+        } else {
+            $params['submissionnum'] = $this->get_current_submissionnum();
+        }
         $submission = $DB->get_record('assign_submission', $params);
 
         if ($submission) {
@@ -1963,6 +1978,7 @@ class assign {
             $submission->userid       = $userid;
             $submission->timecreated = time();
             $submission->timemodified = $submission->timecreated;
+            $submission->submissionnum = $submissionnum;
 
             if ($this->get_instance()->submissiondrafts) {
                 $submission->status = ASSIGN_SUBMISSION_STATUS_DRAFT;
@@ -1974,6 +1990,73 @@ class assign {
             return $submission;
         }
         return false;
+    }
+
+    /**
+     * Returns the largest submissionnum currently in use by this assignment
+     * @return int
+     */
+    public function get_max_submissionnum() {
+        global $DB;
+
+        static $maxsubmissionnum = null;
+        if (is_null($maxsubmissionnum)) {
+            $maxsubmissionnum = $DB->get_field_sql("SELECT MAX(submissionnum)
+                                                      FROM {assign_submission}
+                                                     WHERE assignment = ?", array($this->get_instance()->id));
+        }
+        return $maxsubmissionnum;
+    }
+
+    /**
+     * Get the last submissionnum the user viewed.
+     * @return int
+     */
+    public function get_current_submissionnum() {
+        global $SESSION;
+
+        if (!isset($SESSION->assign_submissionnum)) {
+            $SESSION->assign_submissionnum = array();
+        }
+        $id = $this->get_instance()->id;
+        if (!isset($SESSION->assign_submissionnum[$id])) {
+            $SESSION->assign_submissionnum[$id] = $this->get_max_submissionnum();
+        }
+        return $SESSION->assign_submissionnum[$id];
+    }
+
+    /**
+     * Sets the currently viewed submissionnum.
+     * @param $num
+     * @throws coding_exception
+     */
+    public function set_current_submissionnum($num) {
+        global $SESSION;
+
+        $old = $this->get_current_submissionnum();
+        if ($old != $num) {
+
+            if ($num < 1 || $num > $this->get_max_submissionnum()) {
+                throw new coding_exception("Invalid current submissionnumber $num");
+            }
+
+            $id = $this->get_instance()->id;
+            $SESSION->assign_submissionnum[$id] = $num;
+        }
+    }
+
+    /**
+     * Update the current submisisonnum based on the URL parameters
+     */
+    protected function update_current_submissionnum() {
+        $newnum = optional_param('submissionnum', null, PARAM_INT);
+        if (is_null($newnum)) {
+            return;
+        }
+        if ($newnum < 1 || $newnum > $this->get_max_submissionnum()) {
+            return;
+        }
+        $this->set_current_submissionnum($newnum);
     }
 
     /**
@@ -2307,6 +2390,11 @@ class assign {
             require_once($CFG->libdir . '/plagiarismlib.php');
             $o .= plagiarism_update_status($this->get_course(), $this->get_course_module());
         }
+
+        // Resubmission selection links
+        $maxresub = $this->get_max_submissionnum();
+        $currentsub = $this->get_current_submissionnum();
+        $o .= $this->get_renderer()->render(new assign_submissionnum_selector($this, $currentsub, $maxresub));
 
         // load and print the table of submissions
         if ($showquickgrading && $quickgrading) {
@@ -3614,6 +3702,39 @@ class assign {
         $this->add_to_log('reveal identities', get_string('revealidentities', 'assign'));
     }
 
+    /**
+     * Adds a resubmission for the selected user
+     * @param int $userid
+     */
+    private function process_add_resubmission($userid = 0) {
+        global $DB;
+
+        if ($this->get_instance()->resubmission != self::RESUBMISSION_MANUAL) {
+            return;
+        }
+
+        // Need grade permission
+        require_capability('mod/assign:grade', $this->context);
+        require_sesskey();
+
+        if (!$userid) {
+            $userid = required_param('userid', PARAM_INT);
+        }
+        $user = $DB->get_record('user', array('id' => $userid), '*', MUST_EXIST);
+
+        $currentsubmission = $this->get_user_submission($userid, false);
+        $resubnum = 1;
+        if ($currentsubmission) {
+            $resubnum = $currentsubmission->submissionnum + 1;
+        }
+        $maxresubmission = $this->get_instance()->maxresubmission;
+        if ($maxresubmission != -1 && $resubnum > ($maxresubmission + 1)) {
+            return;
+        }
+        $this->get_user_submission($userid, true, $resubnum);
+
+        $this->add_to_log('add resubmission', get_string('addresubmissionforstudent', 'assign', array('id'=>$user->id, 'fullname'=>fullname($user))));
+    }
 
     /**
      * save grading options

@@ -142,6 +142,21 @@ class mod_assign_mod_form extends moodleform_mod {
             plagiarism_get_form_elements_module($mform, $ctx->get_course_context(), 'mod_assign');
         }
 
+        $options = array(
+            assign::RESUBMISSION_NONE => get_string('resubmission_none', 'mod_assign'),
+            assign::RESUBMISSION_MANUAL => get_string('resubmission_manual', 'mod_assign'),
+            assign::RESUBMISSION_GRADE => get_string('resubmission_grade', 'mod_assign'),
+            assign::RESUBMISSION_FAILEDGRADE => get_string('resubmission_failedgrade', 'mod_assign')
+        );
+        $mform->addElement('select', 'resubmission', get_string('resubmission', 'mod_assign'), $options);
+        $mform->setDefault('resubmission', assign::RESUBMISSION_NONE);
+        $mform->addHelpButton('resubmission', 'resubmission', 'mod_assign');
+
+        $options = array(-1 => get_string('unlimited', 'mod_assign')) + array_combine(range(1, 30), range(1, 30));
+        $mform->addElement('select', 'maxresubmission', get_string('maxresubmission', 'mod_assign'), $options);
+        $mform->setDefault('maxresubmission', 3);
+        $mform->disabledIf('maxresubmission', 'resubmission', 'eq', assign::RESUBMISSION_NONE);
+
         $assignment->add_all_plugin_settings($mform);
         $this->standard_grading_coursemodule_elements();
         $this->standard_coursemodule_elements();

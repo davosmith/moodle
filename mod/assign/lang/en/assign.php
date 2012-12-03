@@ -23,6 +23,8 @@
  */
 
 $string['activityoverview'] = 'You have assignments that need attention';
+$string['addresubmission'] = 'Allow resubmission';
+$string['addresubmissionforstudent'] = 'Allow resubmission for {$a->fullname} ($a->id)';
 $string['addsubmission'] = 'Add submission';
 $string['allowsubmissions'] = 'Allow the user to continue making submissions to this assignment.';
 $string['allowsubmissionsshort'] = 'Allow submission changes';
@@ -175,6 +177,7 @@ $string['locksubmissions'] = 'Lock submissions';
 $string['manageassignfeedbackplugins'] = 'Manage assignment feedback plugins';
 $string['manageassignsubmissionplugins'] = 'Manage assignment submission plugins';
 $string['maxgrade'] = 'Maximum Grade';
+$string['maxresubmission'] = 'Max resubmissions';
 $string['messageprovider:assign_notification'] = 'Assignment notifications';
 $string['modulename'] = 'Assignment';
 $string['modulename_help'] = 'The assignment activity module enables a teacher to communicate tasks, collect work and provide grades and feedback.
@@ -225,6 +228,13 @@ $string['requiresubmissionstatement_help'] = 'Require that students accept the s
 $string['requireallteammemberssubmit'] = 'Require all group members submit';
 $string['requireallteammemberssubmit_help'] = 'If enabled, all members of the student group must click the submit button for this assignment before the group submission will be considered as submitted. If disabled, the group submission will be considered as submitted as soon as any member of the student group clicks the submit button.';
 $string['recordid'] = 'Identifier';
+$string['resubmission'] = 'Resubmission';
+$string['resubmission_help'] = 'This controls when resubmissions are opened up to students. Manual - the teacher must click \'Allow resubmission\'. Grade - as soon as a grade has been assigned. Less than pass grade - only if the grade given was less than the passing grade';
+$string['resubmissioncount'] = 'Max resubmissions';
+$string['resubmission_failedgrade'] = 'Less than pass grade';
+$string['resubmission_grade'] = 'Graded';
+$string['resubmission_manual'] = 'Manual';
+$string['resubmission_none'] = 'None';
 $string['revealidentities'] = 'Reveal student identities';
 $string['revealidentitiesconfirm'] = 'Are you sure you want to reveal student identities for this assignment. This operation cannot be undone. Once the student identities have been revealed, the marks will be released to the gradebook.';
 $string['reverttodraftforstudent'] = 'Revert submission to draft for student: (id={$a->id}, fullname={$a->fullname}).';
@@ -295,6 +305,7 @@ $string['teamsubmissionstatus'] = 'Group submission status';
 $string['textinstructions'] = 'Assignment instructions';
 $string['timemodified'] = 'Last modified';
 $string['timeremaining'] = 'Time remaining';
+$string['unlimited'] = 'Unlimited';
 $string['unlocksubmissionforstudent'] = 'Allow submissions for student: (id={$a->id}, fullname={$a->fullname}).';
 $string['unlocksubmissions'] = 'Unlock submissions';
 $string['updategrade'] = 'Update grade';
@@ -314,6 +325,7 @@ $string['viewownsubmissionstatus'] = 'View own submission status page.';
 $string['viewsubmissionforuser'] = 'View submission for user: {$a}';
 $string['viewsubmission'] = 'View submission';
 $string['viewfull'] = 'View full';
+$string['viewsubmissionnum'] = 'View resubmission';
 $string['viewsummary'] = 'View summary';
 $string['viewsubmissiongradingtable'] = 'View submission grading table.';
 $string['viewrevealidentitiesconfirm'] = 'View reveal student identities confirmation page.';

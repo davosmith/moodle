@@ -71,8 +71,10 @@ class assign_grading_table extends table_sql implements renderable {
      * @param string $filter The current filter
      * @param int $rowoffset For showing a subsequent page of results
      * @param bool $quickgrading Is this table wrapped in a quickgrading form?
+     * @param int $submissionnum
+     * @param null $downloadfilename
      */
-    public function __construct(assign $assignment, $perpage, $filter, $rowoffset, $quickgrading, $downloadfilename = null) {
+    public function __construct(assign $assignment, $perpage, $filter, $rowoffset, $quickgrading, $downloadfilename = null, $submissionnum = null) {
         global $CFG, $PAGE, $DB;
         parent::__construct('mod_assign_grading');
         $this->assignment = $assignment;
@@ -107,6 +109,10 @@ class assign_grading_table extends table_sql implements renderable {
             $users[] = -1;
         }
 
+        if (is_null($submissionnum)) {
+            $submissionnum = $this->assignment->get_current_submissionnum();
+        }
+
         $params = array();
         $params['assignmentid1'] = (int)$this->assignment->get_instance()->id;
         $params['assignmentid2'] = (int)$this->assignment->get_instance()->id;
@@ -133,6 +139,8 @@ class assign_grading_table extends table_sql implements renderable {
         list($userwhere, $userparams) = $DB->get_in_or_equal($users, SQL_PARAMS_NAMED, 'user');
         $where = 'u.id ' . $userwhere;
         $params = array_merge($params, $userparams);
+        $where .= ' AND s.submissionnum = :submissionnum ';
+        $params['submissionnum'] = $submissionnum;
 
         if ($filter == ASSIGN_FILTER_SUBMITTED) {
             $where .= ' AND s.timecreated > 0 ';
@@ -752,6 +760,14 @@ class assign_grading_table extends table_sql implements renderable {
                 $actions[$url->out(false)] = $description;
 
             }
+
+            $url = new moodle_url('/mod/assign/view.php', array('id' => $this->assignment->get_course_module()->id,
+                                                               'userid'=>$row->id,
+                                                               'action'=>'addresubmission',
+                                                               'sesskey'=>sesskey(),
+                                                               'page'=>$this->currpage));
+            $description = get_string('addresubmission', 'assign');
+            $actions[$url->out(false)] = $description;
         }
         if ($row->status == ASSIGN_SUBMISSION_STATUS_SUBMITTED && $this->assignment->get_instance()->submissiondrafts) {
             $url = new moodle_url('/mod/assign/view.php', array('id' => $this->assignment->get_course_module()->id,
