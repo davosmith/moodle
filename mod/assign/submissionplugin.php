@@ -56,22 +56,32 @@ abstract class assign_submission_plugin extends assign_plugin {
         return true;
     }
 
-
     /**
      * Check if the submission plugin has all the required data to allow the work
      * to be submitted for grading
+     * @param stdClass $submssion the assign_submission record being submitted
      * @return bool|string 'true' if OK to proceed with submission, otherwise a
      *                        a message to display to the user
      */
-    public function precheck_submission() {
+    public function precheck_submission($submssion) {
         return true;
     }
 
     /**
      * Carry out any extra processing required when the work is submitted for grading
+     * @param stdClass $submission the assign_submisison record being submitted
      * @return void
      */
-    public function submit_for_grading() {
+    public function submit_for_grading($submission) {
+    }
+
+    /**
+     * Copy the student's submission from a previous submission. Used when a student opts to base their resubmission
+     * on the last submission.
+     * @param $sourcesubmission
+     * @param $destsubmission
+     */
+    public function copy_submission($sourcesubmission, $destsubmission) {
     }
 
 }

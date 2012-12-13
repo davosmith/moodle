@@ -384,6 +384,7 @@ class assign_submission_status implements renderable {
      * @param int $extensionduedate - Any extension to the due date granted for this user
      * @param context $context - Any extension to the due date granted for this user
      * @param blindmarking $blindmarking - Should we hide student identities from graders?
+     * @param $gradingcontrollerpreview
      */
     public function __construct($allowsubmissionsfromdate,
                                 $alwaysshowdescription,
@@ -437,6 +438,54 @@ class assign_submission_status implements renderable {
         $this->gradingcontrollerpreview = $gradingcontrollerpreview;
     }
 
+}
+
+/**
+ * Used to output the submission & grading history for a particular assignment
+ * @package mod_assign
+ * @copyright 2012 Davo Smith, Synergy Learning
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class assign_submission_history implements renderable {
+
+    public $allsubmissions = array();
+    public $allgrades = array();
+    public $submissionnum = 1;
+    public $maxsubmissionnum = 1;
+    public $submissionplugins = array();
+    public $feedbackplugins = array();
+    /** @var int coursemoduleid */
+    public $coursemoduleid = 0;
+    /** @var string returnaction */
+    public $returnaction = '';
+    /** @var string returnparams */
+    public $returnparams = array();
+    public $grading = false;
+
+    /**
+     * @param $allsubmissions
+     * @param $allgrades
+     * @param $submissionnum
+     * @param $maxsubmissionnum
+     * @param $submissionplugins
+     * @param $feedbackplugins
+     * @param $coursemoduleid
+     * @param $returnaction
+     * @param $returnparams
+     */
+    public function __construct($allsubmissions, $allgrades, $submissionnum, $maxsubmissionnum, $submissionplugins,
+                                $feedbackplugins, $coursemoduleid, $returnaction, $returnparams, $grading) {
+        $this->allsubmissions = $allsubmissions;
+        $this->allgrades = $allgrades;
+        $this->submissionnum = $submissionnum;
+        $this->maxsubmissionnum = $maxsubmissionnum;
+        $this->submissionplugins = $submissionplugins;
+        $this->feedbackplugins = $feedbackplugins;
+        $this->coursemoduleid = $coursemoduleid;
+        $this->returnaction = $returnaction;
+        $this->returnparams = $returnparams;
+        $this->grading = $grading;
+    }
 }
 
 /**

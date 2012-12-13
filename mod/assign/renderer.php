@@ -631,9 +631,20 @@ class mod_assign_renderer extends plugin_renderer_base {
                     $o .= $this->output->single_button(new moodle_url('/mod/assign/view.php', $urlparams),
                                                        get_string('addsubmission', 'assign'), 'get');
                 } else {
-                    $urlparams = array('id' => $status->coursemoduleid, 'action' => 'editsubmission');
-                    $o .= $this->output->single_button(new moodle_url('/mod/assign/view.php', $urlparams),
-                                                       get_string('editsubmission', 'assign'), 'get');
+                    if ($submission->status == ASSIGN_SUBMISSION_STATUS_RESUBMISSION) {
+                        $urlparams = array('id' => $status->coursemoduleid, 'action' => 'startresubmission');
+                        $o .= $this->output->single_button(new moodle_url('/mod/assign/view.php', $urlparams),
+                                                           get_string('addcleanresubmission', 'assign'), 'get');
+
+                        $urlparams = array('id' => $status->coursemoduleid, 'action' => 'copyresubmission');
+                        $o .= $this->output->single_button(new moodle_url('/mod/assign/view.php', $urlparams),
+                                                           get_string('addcopyresubmission', 'assign'), 'get');
+
+                    } else {
+                        $urlparams = array('id' => $status->coursemoduleid, 'action' => 'editsubmission');
+                        $o .= $this->output->single_button(new moodle_url('/mod/assign/view.php', $urlparams),
+                                                           get_string('editsubmission', 'assign'), 'get');
+                    }
                 }
             }
 
@@ -649,6 +660,142 @@ class mod_assign_renderer extends plugin_renderer_base {
 
         $o .= $this->output->container_end();
         return $o;
+    }
+
+    /**
+     * Output the submission / grading history for this assignment
+     *
+     * @param assign_submission_history $history
+     * @return string
+     */
+    public function render_assign_submission_history(assign_submission_history $history) {
+        $historyout = '';
+        for ($i=$history->maxsubmissionnum; $i>0; $i--) {
+            if ($i == $history->submissionnum) {
+                // Do not show the currently-selected submission in the submission history.
+                if ($i != $history->maxsubmissionnum) {
+                    $historyout .= html_writer::tag('div', get_string('submissionnum', 'assign', $i),
+                                                    array('class' => 'currentsubmission'));
+                }
+                continue;
+            }
+            if (!array_key_exists($i, $history->allsubmissions)) {
+                continue;
+            }
+            $submission = $history->allsubmissions[$i];
+            $grade = $history->allgrades[$i];
+
+            $editbtn = '';
+            if ($history->grading) {
+                $params = array(
+                    'id' => $history->coursemoduleid,
+                    'action' => $history->returnaction,
+                    'showsubmissionnum' => $submission->submissionnum
+                );
+                $params = array_merge($params, $history->returnparams);
+                $editurl = new moodle_url('/mod/assign/view.php', $params);
+                $editbtn = $this->output->single_button($editurl, get_string('editfeedback', 'mod_assign'), 'get');
+            }
+
+            $t = new html_table();
+            $cell = new html_table_cell(get_string('submissionnum', 'assign', $i).' '.$editbtn);
+            $cell->attributes['class'] = 'historytitle';
+            $cell->colspan = 2;
+            $t->data[] = new html_table_row(array($cell));
+
+            if ($submission) {
+                $cell1 = get_string('submitted', 'assign');
+                $cell2 = userdate($submission->timemodified);
+                $t->data[] = new html_table_row(array($cell1, $cell2));
+                foreach ($history->submissionplugins as $plugin) {
+                    if ($plugin->is_enabled() &&
+                        $plugin->is_visible() &&
+                        $plugin->has_user_summary() &&
+                        !$plugin->is_empty($submission)) {
+
+                        $cell1 = new html_table_cell($plugin->get_name());
+                        $pluginsubmission = new assign_submission_plugin_submission($plugin,
+                                                                                    $submission,
+                                                                                    assign_submission_plugin_submission::SUMMARY,
+                                                                                    $history->coursemoduleid,
+                                                                                    $history->returnaction,
+                                                                                    $history->returnparams);
+                        $cell2 = new html_table_cell($this->render($pluginsubmission));
+
+                        $t->data[] = new html_table_row(array($cell1, $cell2));
+                    }
+                }
+            }
+
+            if ($grade) {
+                // Heading 'feedback'.
+                $cell = new html_table_cell(get_string('feedback', 'assign', $i));
+                $cell->attributes['class'] = 'historytitle';
+                $cell->colspan = 2;
+                $t->data[] = new html_table_row(array($cell));
+
+                // Grade.
+                $cell1 = new html_table_cell(get_string('grade'));
+                $cell2 = $grade->gradefordisplay;
+                $t->data[] = new html_table_row(array($cell1, $cell2));
+
+                // Graded on.
+                $cell1 = new html_table_cell(get_string('gradedon', 'assign'));
+                $cell2 = new html_table_cell(userdate($grade->timemodified));
+                $t->data[] = new html_table_row(array($cell1, $cell2));
+
+                // Graded by.
+                $cell1 = new html_table_cell(get_string('gradedby', 'assign'));
+                $cell2 = new html_table_cell($this->output->user_picture($grade->grader) .
+                                                 $this->output->spacer(array('width'=>30)) . fullname($grade->grader));
+                $t->data[] = new html_table_row(array($cell1, $cell2));
+
+                // Feedback from plugins.
+                foreach ($history->feedbackplugins as $plugin) {
+                    if ($plugin->is_enabled() &&
+                        $plugin->is_visible() &&
+                        $plugin->has_user_summary() &&
+                        !$plugin->is_empty($grade)) {
+
+                        $cell1 = new html_table_cell($plugin->get_name());
+                        $pluginfeedback = new assign_feedback_plugin_feedback(
+                            $plugin, $grade, assign_feedback_plugin_feedback::SUMMARY, $history->coursemoduleid,
+                            $history->returnaction, $history->returnparams
+                        );
+                        $cell2 = new html_table_cell($this->render($pluginfeedback));
+                        $t->data[] = new html_table_row(array($cell1, $cell2));
+                    }
+
+                }
+
+            }
+
+            $historyout .= html_writer::table($t);
+        }
+
+        $o = '';
+        if ($historyout) {
+            $o .= $this->box_start('generalbox submissionhistory');
+            $o .= $this->heading(get_string('submissionhistory', 'assign'), 3);
+
+            $o .= $historyout;
+
+            $o .= $this->box_end();
+        }
+
+        return $o;
+    }
+
+    /**
+     * Display a warning message if the teacher is editing the feedback from a previous submission.
+     * @param $submissionnum
+     * @param $maxsubmissionnum
+     * @return string
+     */
+    public function edit_previous_feedback_warning($submissionnum, $maxsubmissionnum) {
+        $details = (object)array('submissionnum' => $submissionnum, 'maxsubmissionnum' => $maxsubmissionnum);
+        $attribs = array('class' => 'previousfeedbackwarning');
+        return html_writer::tag('p', get_string('previousfeedbackwarning', 'mod_assign', $details), $attribs);
     }
 
     /**
@@ -741,6 +888,8 @@ class mod_assign_renderer extends plugin_renderer_base {
         $this->page->requires->string_for_js('batchoperationconfirmlock', 'assign');
         $this->page->requires->string_for_js('batchoperationconfirmreverttodraft', 'assign');
         $this->page->requires->string_for_js('batchoperationconfirmunlock', 'assign');
+        $this->page->requires->string_for_js('batchoperationconfirmaddresubmission', 'assign');
+        $this->page->requires->string_for_js('batchoperationconfirmremoveresubmission', 'assign');
         $this->page->requires->string_for_js('editaction', 'assign');
         foreach ($table->plugingradingbatchoperations as $plugin => $operations) {
             foreach ($operations as $operation => $description) {

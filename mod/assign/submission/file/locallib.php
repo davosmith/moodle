@@ -457,4 +457,45 @@ class assign_submission_file extends assign_submission_plugin {
         return array(ASSIGNSUBMISSION_FILE_FILEAREA=>$this->get_name());
     }
 
+    /**
+     * Copy the student's submission from a previous submission. Used when a student opts to base their resubmission
+     * on the last submission.
+     * @param $sourcesubmission
+     * @param $destsubmission
+     */
+    public function copy_submission($sourcesubmission, $destsubmission) {
+        global $DB;
+
+        if ($sourcesubmission->assignment != $destsubmission->assignment ||
+            $sourcesubmission->userid != $destsubmission->userid) {
+            throw new coding_exception('copy_submission is only valid for copying submissions for a single student and assignment');
+        }
+
+        // Copy the files across.
+        $contextid = $this->assignment->get_context()->id;
+        $fs = get_file_storage();
+        $files = $fs->get_area_files($contextid, 'assignsubmission_file',
+                                     ASSIGNSUBMISSION_FILE_FILEAREA, $sourcesubmission->id, "id", false);
+        foreach ($files as $file) {
+            if ($fs->file_exists($contextid, 'assignsubmission_file', ASSIGNSUBMISSION_FILE_FILEAREA,
+                                 $destsubmission->id, $file->get_filepath(), $file->get_filename())) {
+                continue; // The file has already been copied - do not overwrite it.
+            }
+            $record = array(
+                'itemid' => $destsubmission->id,
+            );
+            $fs->create_file_from_storedfile($record, $file);
+        }
+
+        // Copy the assignsubmission_file record.
+        if ($subrec = $this->get_file_submission($sourcesubmission->id)) {
+            $destrec = $this->get_file_submission($destsubmission->id);
+            if (!$destrec) {
+                // Do not overwrite an existing record.
+                unset($subrec->id);
+                $subrec->submission = $destsubmission->id;
+                $DB->insert_record('assignsubmission_file', $subrec);
+            }
+        }
+    }
 }

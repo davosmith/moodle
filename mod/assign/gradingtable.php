@@ -62,6 +62,9 @@ class assign_grading_table extends table_sql implements renderable {
     private $plugincache = array();
     /** @var array $scale - A list of the keys and descriptions for the custom scale */
     private $scale = null;
+    /** @var array $gradedsubmissions - Stores details of the maximum submission and its grade
+     * (for determining manual resubmissions) */
+    private $gradedsubmissions = array();
 
     /**
      * overridden constructor keeps a reference to the assignment class that is displaying this table
@@ -71,6 +74,7 @@ class assign_grading_table extends table_sql implements renderable {
      * @param string $filter The current filter
      * @param int $rowoffset For showing a subsequent page of results
      * @param bool $quickgrading Is this table wrapped in a quickgrading form?
+     * @param null $downloadfilename
      */
     public function __construct(assign $assignment,
                                 $perpage,
@@ -116,6 +120,7 @@ class assign_grading_table extends table_sql implements renderable {
         $params = array();
         $params['assignmentid1'] = (int)$this->assignment->get_instance()->id;
         $params['assignmentid2'] = (int)$this->assignment->get_instance()->id;
+        $params['assignmentid3'] = (int)$this->assignment->get_instance()->id;
 
         $fields = user_picture::fields('u') . ', ';
         $fields .= 'u.id as userid, ';
@@ -131,7 +136,13 @@ class assign_grading_table extends table_sql implements renderable {
         $fields .= 'g.locked as locked, ';
         $fields .= 'g.extensionduedate as extensionduedate';
         $from = '{user} u LEFT JOIN {assign_submission} s ON u.id = s.userid AND s.assignment = :assignmentid1' .
-                        ' LEFT JOIN {assign_grades} g ON u.id = g.userid AND g.assignment = :assignmentid2';
+                ' AND s.submissionnum = (
+                       SELECT MAX(submissionnum)
+                       FROM {assign_submission}
+                       WHERE u.id = userid AND assignment = :assignmentid3
+                  ) '.
+                        ' LEFT JOIN {assign_grades} g ON u.id = g.userid AND g.assignment = :assignmentid2' .
+                                    ' AND (s.submissionnum IS NULL OR g.submissionnum = s.submissionnum)';
 
         $userparams = array();
         $userindex = 0;
@@ -327,6 +338,69 @@ class assign_grading_table extends table_sql implements renderable {
             $this->start_output();
         }
     }
+
+    /**
+     * Gather the data from the database.
+     * Override the base implementation, so that when manual resubmissions are enabled, extra data is loaded
+     * to determine if each student is ready to be allowed a resubmission.
+     * @param int $pagesize
+     * @param bool $useinitialsbar
+     */
+    function query_db($pagesize, $useinitialsbar=true) {
+        global $DB;
+        parent::query_db($pagesize, $useinitialsbar);
+        if (!$this->is_downloading() && $this->assignment->is_manual_resubmission()) {
+            // Load some extra records to work out which users are ready for a manual resubmission.
+            if ($this->rawdata) {
+                $userids = array();
+                foreach ($this->rawdata as $data) {
+                    $userids[] = $data->userid;
+                }
+                list($usql, $params) = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
+                $sql = "SELECT s.id, s.userid, s.submissionnum, s.status, g.grade
+                          FROM {assign_submission} s
+                          LEFT JOIN {assign_grades} g ON g.userid = s.userid AND g.assignment = s.assignment
+                                                     AND g.submissionnum = s.submissionnum
+                         WHERE s.assignment = :assignmentid AND s.userid $usql
+                         ORDER BY s.userid, s.submissionnum";
+                $params['assignmentid'] = $this->assignment->get_instance()->id;
+                $submissions = $DB->get_records_sql($sql, $params);
+
+                $this->gradedsubmissions = array();
+                $lastuserid = false;
+                $founduserids = array();
+                foreach ($submissions as $submission) {
+                    $this->gradedsubmissions[$submission->userid] = (object)array(
+                        'maxsubmissionnum' => $submission->submissionnum,
+                        'grade' => $submission->grade,
+                        'status' => $submission->status,
+                    );
+                    $founduserids[$submission->userid] = $submission->userid;
+                }
+
+                // Search for any grades assigned to students who have no submissions.
+                $params = array();
+                $whereextra = '';
+                if ($founduserids) {
+                    list($usql, $params) = $DB->get_in_or_equal($founduserids, SQL_PARAMS_NAMED, 'param', false);
+                    $whereextra = "AND g.userid $usql";
+                }
+                $sql = "SELECT g.id, g.userid, g.submissionnum, g.grade
+                          FROM {assign_grades} g
+                         WHERE g.assignment = :assignmentid $whereextra
+                         ORDER BY g.userid, g.submissionnum";
+                $params['assignmentid'] = $this->assignment->get_instance()->id;
+                $grades = $DB->get_records_sql($sql, $params);
+                foreach ($grades as $grade) {
+                    $this->gradedsubmissions[$grade->userid] = (object)array(
+                        'maxsubmissionnum' => $grade->submissionnum,
+                        'grade' => $grade->grade,
+                    );
+                }
+            }
+        }
+    }
+
 
     /**
      * Before adding each row to the table make sure rownum is incremented.
@@ -749,7 +823,6 @@ class assign_grading_table extends table_sql implements renderable {
                            'rownum'=>$this->rownum,
                            'action'=>'grade');
         $url = new moodle_url('/mod/assign/view.php', $urlparams);
-
         if (!$row->grade) {
             $description = get_string('grade');
         } else {
@@ -760,7 +833,7 @@ class assign_grading_table extends table_sql implements renderable {
         // Hide for offline assignments.
         if ($this->assignment->is_any_submission_plugin_enabled()) {
             if (!$row->status ||
-                    $row->status == ASSIGN_SUBMISSION_STATUS_DRAFT ||
+                    $row->status != ASSIGN_SUBMISSION_STATUS_SUBMITTED ||
                     !$this->assignment->get_instance()->submissiondrafts) {
 
                 if (!$row->locked) {
@@ -796,6 +869,45 @@ class assign_grading_table extends table_sql implements renderable {
                 $url = new moodle_url('/mod/assign/view.php', $urlparams);
                 $description = get_string('grantextension', 'assign');
                 $actions[$url->out(false)] = $description;
+            }
+
+            // Check if a manual resubmission can be given.
+            $allowresub = $this->assignment->is_manual_resubmission(); // Manual resubmissions enabled.
+            $allowresub = $allowresub && array_key_exists($row->id, $this->gradedsubmissions); // Student has submitted something.
+            if ($allowresub) {
+                $gradedsubmission = $this->gradedsubmissions[$row->id];
+                $allowresub = $allowresub && $gradedsubmission->grade; // Latest submission is graded.
+                if ($allowresub && $gradedsubmission->status == ASSIGN_SUBMISSION_STATUS_RESUBMISSION) {
+                    // Resubmission already allowed - add a 'remove resubmission' option.
+                    $params = array(
+                        'id' => $this->assignment->get_course_module()->id,
+                        'userid' => $row->id,
+                        'action' => 'removeresubmission',
+                        'sesskey' => sesskey(),
+                        'page' => $this->currpage
+                    );
+                    $url = new moodle_url('/mod/assign/view.php', $params);
+                    $description = get_string('removeresubmission', 'assign');
+                    $actions[$url->out(false)] = $description;
+
+                } else {
+                    // Resubmission not already allowed.
+                    $maxsub = $gradedsubmission->maxsubmissionnum;
+                    $allowresub = $allowresub && !$this->assignment->reached_resubmission_limit($maxsub);
+                    // Not reached the resubmission limit.
+                    if ($allowresub) {
+                        $params = array(
+                            'id' => $this->assignment->get_course_module()->id,
+                            'userid' => $row->id,
+                            'action' => 'addresubmission',
+                            'sesskey' => sesskey(),
+                            'page' => $this->currpage
+                        );
+                        $url = new moodle_url('/mod/assign/view.php', $params);
+                        $description = get_string('addresubmission', 'assign');
+                        $actions[$url->out(false)] = $description;
+                    }
+                }
             }
         }
         if ($row->status == ASSIGN_SUBMISSION_STATUS_SUBMITTED &&

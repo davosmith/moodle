@@ -150,3 +150,45 @@ td.submissioneditable {
 .hidefull {
     display: none;
 }
+
+#page-mod-assign-view .previousfeedbackwarning {
+    font-size: 140%;
+    font-weight: bold;
+    text-align: center;
+    color: #500;
+}
+
+#page-mod-assign-view .submissionhistory {
+    background-color: #b0b0b0;
+}
+
+#page-mod-assign-view .submissionhistory .cell.historytitle {
+    background-color: #808080;
+}
+
+#page-mod-assign-view .submissionhistory .cell {
+    background-color: #d0d0d0;
+}
+
+#page-mod-assign-view .submissionhistory .singlebutton {
+    display: inline-block;
+    float: right;
+}
+
+#page-mod-assign-view .submissionsummarytable .singlebutton {
+    display: inline-block;
+}
+
+#page-mod-assign-view .submissionhistory .currentsubmission {
+    display: block;
+    border: dashed #202020 1px;
+    padding: 5px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+#page-mod-assign-view .submissionhistory .generaltable {
+    min-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}

@@ -180,4 +180,32 @@ class assign_submission_comments extends assign_submission_plugin {
         return parent::is_enabled();
     }
 
+    /**
+     * Copy the comments between the given submissions
+     * @param $sourcesubmission
+     * @param $destsubmission
+     */
+    public function copy_submission($sourcesubmission, $destsubmission) {
+        global $DB;
+
+        if ($sourcesubmission->assignment != $destsubmission->assignment ||
+            $sourcesubmission->userid != $destsubmission->userid) {
+            throw new coding_exception('copy_submission is only valid for copying submissions for a single student and assignment');
+        }
+
+        // Comments API does not allow access to the raw comments to copy them, so directly accessing the database.
+        $contextid = $this->assignment->get_context()->id;
+        $commentarea = 'submission_comments';
+        $itemid = $sourcesubmission->id;
+
+        $comments = $DB->get_records('comments', array('contextid' => $contextid, 'commentarea' => $commentarea,
+                                                       'itemid' => $itemid));
+        foreach ($comments as $comment) {
+            // Copy each of the comments into the new submission area.
+            unset($comment->id);
+            $comment->itemid = $destsubmission->id;
+            $DB->insert_record('comments', $comment);
+        }
+    }
+
 }

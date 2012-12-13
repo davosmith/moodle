@@ -62,7 +62,9 @@ class backup_assign_activity_structure_step extends backup_activity_structure_st
                                                   'requireallteammemberssubmit',
                                                   'teamsubmissiongroupingid',
                                                   'blindmarking',
-                                                  'revealidentities'));
+                                                  'revealidentities',
+                                                  'resubmission',
+                                                  'maxresubmission'));
 
         $submissions = new backup_nested_element('submissions');
 
@@ -71,7 +73,8 @@ class backup_assign_activity_structure_step extends backup_activity_structure_st
                                                       'timecreated',
                                                       'timemodified',
                                                       'status',
-                                                      'groupid'));
+                                                      'groupid',
+                                                      'submissionnum'));
 
         $grades = new backup_nested_element('grades');
 
@@ -83,7 +86,8 @@ class backup_assign_activity_structure_step extends backup_activity_structure_st
                                                  'grade',
                                                  'locked',
                                                  'mailed',
-                                                 'extensionduedate'));
+                                                 'extensionduedate',
+                                                 'submissionnum'));
 
         $pluginconfigs = new backup_nested_element('plugin_configs');
 

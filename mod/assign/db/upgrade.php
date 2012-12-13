@@ -207,6 +207,43 @@ function xmldb_assign_upgrade($oldversion) {
 
     // Moodle v2.4.0 release upgrade line.
     // Put any upgrade step following this.
+    if ($oldversion < 2013012300) {
+
+        // Define field submissionnum to be added to assign_submission.
+        $table = new xmldb_table('assign_submission');
+        $field = new xmldb_field('submissionnum', XMLDB_TYPE_INTEGER, '10', null, null, null, '1', 'groupid');
+
+        // Conditionally launch add field submissionnum.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field resubmission to be added to assign.
+        $table = new xmldb_table('assign');
+
+        $field = new xmldb_field('resubmission', XMLDB_TYPE_INTEGER, '4', null, null, null, '0', 'revealidentities');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field maxresubmission to be added to assign.
+        $field = new xmldb_field('maxresubmission', XMLDB_TYPE_INTEGER, '5', null, null, null, '3', 'resubmission');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field submissionnum to be added to assign_grades.
+        $table = new xmldb_table('assign_grades');
+        $field = new xmldb_field('submissionnum', XMLDB_TYPE_INTEGER, '10', null, null, null, '1', 'extensionduedate');
+
+        // Conditionally launch add field submissionnum.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Module assign savepoint reached.
+        upgrade_mod_savepoint(true, 2013012300, 'assign');
+    }
 
     return true;
 }

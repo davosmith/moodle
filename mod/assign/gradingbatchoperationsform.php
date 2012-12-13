@@ -52,6 +52,10 @@ class mod_assign_grading_batch_operations_form extends moodleform {
         if ($instance['duedate']) {
             $options['grantextension'] = get_string('grantextension', 'assign');
         }
+        if ($instance['resubmission'] == assign::RESUBMISSION_MANUAL) {
+            $options['addresubmission'] = get_string('addresubmission', 'assign');
+            $options['removeresubmission'] = get_string('removeresubmission', 'assign');
+        }
 
         foreach ($instance['feedbackplugins'] as $plugin) {
             if ($plugin->is_visible() && $plugin->is_enabled()) {
