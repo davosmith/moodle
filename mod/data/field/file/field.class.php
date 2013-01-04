@@ -68,7 +68,8 @@ class data_field_file extends data_field_base {
         $html .= '<fieldset><legend><span class="accesshide">'.$this->field->name.'</span></legend>';
 
         // itemid element
-        $html .= '<input type="hidden" name="field_'.$this->field->id.'_file" value="'.$itemid.'" />';
+        $elname = "field_{$this->field->id}_file";
+        $html .= '<input type="hidden" name="'.$elname.'" value="'.$itemid.'" id="id_'.$elname.'" />';
 
         $options = new stdClass();
         $options->maxbytes  = $this->field->param3;
@@ -76,6 +77,7 @@ class data_field_file extends data_field_base {
         $options->accepted_types = '*';
         $options->return_types = FILE_INTERNAL;
         $options->context = $PAGE->context;
+        $options->elementname = $elname;
 
         $fp = new file_picker($options);
         // print out file picker
@@ -84,7 +86,7 @@ class data_field_file extends data_field_base {
         $html .= '</fieldset>';
         $html .= '</div>';
 
-        $module = array('name'=>'data_filepicker', 'fullpath'=>'/mod/data/data.js', 'requires'=>array('core_filepicker'));
+        $module = array('name'=>'data', 'fullpath'=>'/mod/data/data.js', 'requires'=>array('core_filepicker', 'node', 'node-event-simulate', 'core_dndupload'));
         $PAGE->requires->js_init_call('M.data_filepicker.init', array($fp->options), true, $module);
 
         return $html;

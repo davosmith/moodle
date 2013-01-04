@@ -68,7 +68,7 @@ class data_field_url extends data_field_base {
         // print out file picker
         //$str .= $OUTPUT->render($fp);
 
-        $module = array('name'=>'data_urlpicker', 'fullpath'=>'/mod/data/data.js', 'requires'=>array('core_filepicker'));
+        $module = array('name'=>'data', 'fullpath'=>'/mod/data/data.js', 'requires'=>array('core_filepicker', 'node', 'node-event-simulate', 'core_dndupload'));
         $PAGE->requires->js_init_call('M.data_urlpicker.init', array($options), true, $module);
         $PAGE->requires->js_function_call('show_item', array('filepicker-button-'.$options->client_id));
 

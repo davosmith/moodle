@@ -72,6 +72,7 @@ class data_field_picture extends data_field_base {
             $str .= '<img width="'.s($this->previewwidth).'" height="'.s($this->previewheight).'" src="'.$src.'" alt="" />';
         }
 
+        $elname = "field_{$this->field->id}_file";
         $options = new stdClass();
         $options->maxbytes  = $this->field->param3;
         $options->itemid    = $itemid;
@@ -82,12 +83,13 @@ class data_field_picture extends data_field_base {
             $options->filename = $file->get_filename();
             $options->filepath = '/';
         }
+        $options->elementname = $elname;
         $fp = new file_picker($options);
         $str .= $OUTPUT->render($fp);
 
 
         $str .= '<div class="mdl-left">';
-        $str .= '<input type="hidden" name="field_'.$this->field->id.'_file" value="'.$itemid.'" />';
+        $str .= '<input type="hidden" name="'.$elname.'" value="'.$itemid.'" id="id_'.$elname.'" />';
         $str .= '<label for="field_'.$this->field->id.'_alttext">'.get_string('alttext','data') .'</label>&nbsp;<input type="text" name="field_'
                 .$this->field->id.'_alttext" id="field_'.$this->field->id.'_alttext" value="'.s($alttext).'" />';
         $str .= '</div>';
@@ -95,7 +97,7 @@ class data_field_picture extends data_field_base {
         $str .= '</fieldset>';
         $str .= '</div>';
 
-        $module = array('name'=>'data_imagepicker', 'fullpath'=>'/mod/data/data.js', 'requires'=>array('core_filepicker'));
+        $module = array('name'=>'data', 'fullpath'=>'/mod/data/data.js', 'requires'=>array('core_filepicker', 'node', 'node-event-simulate', 'core_dndupload'));
         $PAGE->requires->js_init_call('M.data_imagepicker.init', array($fp->options), true, $module);
         return $str;
     }
