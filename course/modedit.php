@@ -217,6 +217,12 @@ if (!empty($add)) {
         }
     }
 
+    $item = grade_item::fetch(array('itemtype'=>'mod', 'itemmodule'=>$data->modulename,
+                                   'iteminstance'=>$data->instance, 'courseid'=>$course->id));
+    if (!empty($item->gradepass)) {
+        $data->gradepass = $item->gradepass;
+    }
+
     $sectionname = get_section_name($course, $cw);
     $fullmodulename = get_string('modulename', $module->name);
 
@@ -516,8 +522,9 @@ if ($mform->is_cancelled()) {
     // sync idnumber with grade_item
     if ($grade_item = grade_item::fetch(array('itemtype'=>'mod', 'itemmodule'=>$fromform->modulename,
                  'iteminstance'=>$fromform->instance, 'itemnumber'=>0, 'courseid'=>$course->id))) {
-        if ($grade_item->idnumber != $fromform->cmidnumber) {
+        if ($grade_item->idnumber != $fromform->cmidnumber || $grade_item->gradepass != $fromform->gradepass) {
             $grade_item->idnumber = $fromform->cmidnumber;
+            $grade_item->gradepass = $fromform->gradepass;
             $grade_item->update();
         }
     }

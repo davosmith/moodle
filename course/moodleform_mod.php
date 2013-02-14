@@ -758,6 +758,11 @@ abstract class moodleform_mod extends moodleform {
             if (!$this->_features->rating) {
                 $mform->addElement('modgrade', 'grade', get_string('grade'));
                 $mform->setDefault('grade', 100);
+
+                $mform->addElement('text', 'gradepass', get_string('gradepass', 'grades'));
+                $mform->setDefault('gradepass', '');
+                $mform->setType('gradepass', PARAM_FLOAT);
+                $mform->setAdvanced('gradepass', true);
             }
 
             if ($this->_features->advancedgrading
