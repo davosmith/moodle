@@ -164,6 +164,25 @@ function upgrade_set_timeout($max_execution_time=300) {
 }
 
 /**
+ * Output the current savepoint reached during the upgrade.
+ *
+ * @param string $component
+ * @param string|float $version
+ */
+function print_upgrade_progress($component, $version) {
+    global $CFG;
+    if (!empty($CFG->upgradeoutputversions)) {
+        $msg = $component.' - '.$version.' - '.date('j M Y H:i:s');
+        if (CLI_SCRIPT) {
+            $msg .= "\n";
+        } else {
+            $msg = html_writer::div($msg, 'upgrade_progress');
+        }
+        echo $msg;
+    }
+}
+
+/**
  * Upgrade savepoint, marks end of each upgrade block.
  * It stores new main version, resets upgrade timeout
  * and abort upgrade if user cancels page loading.
@@ -197,6 +216,7 @@ function upgrade_main_savepoint($result, $version, $allowabort=true) {
 
     set_config('version', $version);
     upgrade_log(UPGRADE_LOG_NORMAL, null, 'Upgrade savepoint reached');
+    print_upgrade_progress('core', $version);
 
     // reset upgrade timeout to default
     upgrade_set_timeout();
@@ -237,6 +257,7 @@ function upgrade_mod_savepoint($result, $version, $modname, $allowabort=true) {
     $module->version = $version;
     $DB->update_record('modules', $module);
     upgrade_log(UPGRADE_LOG_NORMAL, "mod_$modname", 'Upgrade savepoint reached');
+    print_upgrade_progress("mod_$modname", $version);
 
     // reset upgrade timeout to default
     upgrade_set_timeout();
@@ -277,6 +298,7 @@ function upgrade_block_savepoint($result, $version, $blockname, $allowabort=true
     $block->version = $version;
     $DB->update_record('block', $block);
     upgrade_log(UPGRADE_LOG_NORMAL, "block_$blockname", 'Upgrade savepoint reached');
+    print_upgrade_progress("block_$blockname", $version);
 
     // reset upgrade timeout to default
     upgrade_set_timeout();
@@ -314,6 +336,7 @@ function upgrade_plugin_savepoint($result, $version, $type, $plugin, $allowabort
     }
     set_config('version', $version, $component);
     upgrade_log(UPGRADE_LOG_NORMAL, $component, 'Upgrade savepoint reached');
+    print_upgrade_progress($component, $version);
 
     // Reset upgrade timeout to default
     upgrade_set_timeout();

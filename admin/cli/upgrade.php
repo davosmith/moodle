@@ -50,6 +50,7 @@ list($options, $unrecognized) = cli_get_params(
     array(
         'non-interactive'   => false,
         'allow-unstable'    => false,
+        'quiet'             => false,
         'help'              => false
     ),
     array(
@@ -58,6 +59,12 @@ list($options, $unrecognized) = cli_get_params(
 );
 
 $interactive = empty($options['non-interactive']);
+
+if (empty($options['quiet'])) {
+    $CFG->upgradeoutputversions = true;
+} else {
+    $CFG->upgradeoutputversions = false;
+}
 
 if ($unrecognized) {
     $unrecognized = implode("\n  ", $unrecognized);
@@ -75,6 +82,7 @@ Options:
 --non-interactive     No interactive questions or confirmations
 --allow-unstable      Upgrade even if the version is not marked as stable yet,
                       required in non-interactive mode.
+--quiet               Do not output version numbers as savepoints are reached
 -h, --help            Print out this help
 
 Example:

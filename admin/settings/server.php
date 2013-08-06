@@ -216,6 +216,8 @@ if (empty($CFG->disableupdatenotifications)) {
                                               )));
     $temp->add(new admin_setting_configcheckbox('updatenotifybuilds', new lang_string('updatenotifybuilds', 'core_admin'),
                                                 new lang_string('updatenotifybuilds_desc', 'core_admin'), 0));
+    $temp->add(new admin_setting_configcheckbox('upgradeoutputversions', new lang_string('upgradeoutputversions', 'core_admin'),
+                                                new lang_string('upgradeoutputversions_desc', 'core_admin'), 0));
     $ADMIN->add('server', $temp);
 }
 
