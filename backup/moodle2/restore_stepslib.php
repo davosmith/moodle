@@ -1263,7 +1263,23 @@ class restore_section_structure_step extends restore_structure_step {
         unset($data->id);
         $data->sectionid = $this->task->get_sectionid();
         $data->courseid = $this->get_courseid();
-        $newid = $DB->insert_record('course_format_options', $data);
+
+        // Restoring into an existing course may mean there is already a course_format_options record for this section.
+        $params = array(
+            'courseid' => $data->courseid,
+            'format' => $data->format,
+            'sectionid' => $data->sectionid,
+            'name' => $data->name,
+        );
+        if ($existing = $DB->get_record('course_format_options', $params, 'id, value')) {
+            if ($data->value != $existing->value) {
+                $data->id = $existing->id;
+                $DB->update_record('course_format_options', $data);
+            }
+            $newid = $existing->id;
+        } else {
+            $newid = $DB->insert_record('course_format_options', $data);
+        }
         $this->set_mapping('course_format_options', $oldid, $newid);
     }
 
