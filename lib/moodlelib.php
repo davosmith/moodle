@@ -4308,6 +4308,16 @@ function authenticate_user_login($username, $password, $ignorelockout=false, &$f
             continue;
         }
 
+        // Find the user if the external username has changed.
+        if (!$user->id) {
+            if ($existinguser = $authplugin->find_renamed_user($username)) {
+                // Update the username to match the external system.
+                $user = $existinguser;
+                $user->username = $username;
+                $DB->set_field('user', 'username', $username, array('id' => $user->id));
+            }
+        }
+
         // Successful authentication.
         if ($user->id) {
             // User already exists in database.

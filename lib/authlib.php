@@ -564,6 +564,21 @@ class auth_plugin_base {
 
         return $this->customfields;
     }
+
+    /**
+     * This function is used in situations whereby the external authentication system
+     * allows the username to be changed. It is the responsibility of the authentication
+     * plugin to find the existing Moodle user, via whatever mechanism it wants to use
+     * and then return database record for this user. This user's username will then be
+     * automatically updated to the new value, so they can be found again in the future.
+     *
+     * @param string $username
+     * @return bool|object the user record for the existing user or false if no existing
+     *                     user is found
+     */
+    public function find_renamed_user($username) {
+        return false;
+    }
 }
 
 /**
