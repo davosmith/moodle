@@ -345,6 +345,20 @@ class enrol_cohort_plugin extends enrol_plugin {
         // Nothing to do here, the group members are added in $this->restore_group_restored()
         return;
     }
+
+    /**
+     * Check if the current user is able to delete this instance.
+     *
+     * @param object $instance
+     * @return bool
+     */
+    public function instance_deleteable($instance) {
+        if (!parent::instance_deleteable($instance)) {
+            return false;
+        }
+        $context = context_course::instance($instance->courseid);
+        return has_capability('enrol/cohort:config', $context);
+    }
 }
 
 /**

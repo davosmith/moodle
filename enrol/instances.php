@@ -95,23 +95,25 @@ if ($canconfig and $action and confirm_sesskey()) {
             $instance = $instances[$instanceid];
             $plugin = $plugins[$instance->enrol];
 
-            if ($confirm) {
-                $plugin->delete_instance($instance);
-                redirect($PAGE->url);
-            }
+            if ($plugin->instance_deleteable($instance)) {
+                if ($confirm) {
+                    $plugin->delete_instance($instance);
+                    redirect($PAGE->url);
+                }
 
-            echo $OUTPUT->header();
-            $yesurl = new moodle_url('/enrol/instances.php', array('id'=>$course->id, 'action'=>'delete', 'instance'=>$instance->id, 'confirm'=>1,'sesskey'=>sesskey()));
-            $displayname = $plugin->get_instance_name($instance);
-            $users = $DB->count_records('user_enrolments', array('enrolid'=>$instance->id));
-            if ($users) {
-                $message = markdown_to_html(get_string('deleteinstanceconfirm', 'enrol', array('name'=>$displayname, 'users'=>$users)));
-            } else {
-                $message = markdown_to_html(get_string('deleteinstancenousersconfirm', 'enrol', array('name'=>$displayname)));
+                echo $OUTPUT->header();
+                $yesurl = new moodle_url('/enrol/instances.php', array('id'=>$course->id, 'action'=>'delete', 'instance'=>$instance->id, 'confirm'=>1,'sesskey'=>sesskey()));
+                $displayname = $plugin->get_instance_name($instance);
+                $users = $DB->count_records('user_enrolments', array('enrolid'=>$instance->id));
+                if ($users) {
+                    $message = markdown_to_html(get_string('deleteinstanceconfirm', 'enrol', array('name'=>$displayname, 'users'=>$users)));
+                } else {
+                    $message = markdown_to_html(get_string('deleteinstancenousersconfirm', 'enrol', array('name'=>$displayname)));
+                }
+                echo $OUTPUT->confirm($message, $yesurl, $PAGE->url);
+                echo $OUTPUT->footer();
+                die();
             }
-            echo $OUTPUT->confirm($message, $yesurl, $PAGE->url);
-            echo $OUTPUT->footer();
-            die();
 
         } else if ($action === 'disable') {
             $instance = $instances[$instanceid];
