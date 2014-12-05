@@ -25,6 +25,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+require_once($CFG->dirroot.'/mod/assign/feedbackplugin.php');
+
 use \assignfeedback_editpdf\document_services;
 use \assignfeedback_editpdf\page_editor;
 
