@@ -28,6 +28,7 @@
 require_once(__DIR__ . '/../../../lib/behat/behat_base.php');
 
 use Behat\Behat\Context\Step\Given as Given,
+    Behat\Behat\Context\Step\Then as Then,
     Behat\Gherkin\Node\TableNode as TableNode;
 
 /**
@@ -96,4 +97,51 @@ class behat_enrol extends behat_base {
         return $steps;
     }
 
+    /**
+     * Check to see if the given list of users appears on the enrolled users list
+     *
+     * @Given /^the enrolled users should include "(?P<usernames_string>(?:[^"]|\\")*)"$/
+     * @param string $usernames
+     * @return Then[]
+     */
+    public function the_enrolled_users_should_include($usernames) {
+        global $DB;
+
+        if (!$usernames) {
+            return array();
+        }
+
+        $steps = array();
+        $usernames = explode(',', $usernames);
+        foreach ($usernames as $username) {
+            $user = $DB->get_record('user', array('username' => trim($username)), get_all_user_name_fields(true), MUST_EXIST);
+            $steps[] = new Then('I should see "'.fullname($user).'"');
+        }
+
+        return $steps;
+    }
+
+    /**
+     * Check to see if the given list of users does not appear on the enrolled users list
+     *
+     * @Given /^the enrolled users should not include "(?P<usernames_string>(?:[^"]|\\")*)"$/
+     * @param string $usernames
+     * @return Then[]
+     */
+    public function the_enrolled_users_should_not_include($usernames) {
+        global $DB;
+
+        if (!$usernames) {
+            return array();
+        }
+
+        $steps = array();
+        $usernames = explode(',', $usernames);
+        foreach ($usernames as $username) {
+            $user = $DB->get_record('user', array('username' => trim($username)), get_all_user_name_fields(true), MUST_EXIST);
+            $steps[] = new Then('I should not see "'.fullname($user).'"');
+        }
+
+        return $steps;
+    }
 }
