@@ -932,6 +932,8 @@ EDITOR.prototype = {
                         }
                         Y.one('#' + this.get('linkid')).siblings(SELECTOR.UNSAVEDCHANGESDIV)
                             .item(0).addClass('haschanges');
+                        M.core_formchangechecker.stateinformation.formchanged = true;
+                        Y.one('input[name=editpdf_has_changes_' + this.get('userid') + ']').set('value', 1);
                     } catch (e) {
                         return new M.core.exception(e);
                     }

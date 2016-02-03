@@ -182,6 +182,9 @@ class assign_feedback_editpdf extends assign_feedback_plugin {
             $mform->addElement('hidden', 'editpdf_source_userid', $userid);
             $mform->setType('editpdf_source_userid', PARAM_INT);
             $mform->setConstant('editpdf_source_userid', $userid);
+
+            $mform->addElement('hidden', 'editpdf_has_changes_'.$userid, 0);
+            $mform->setType('editpdf_has_changes_'.$userid, PARAM_BOOL);
         }
     }
 
@@ -206,6 +209,64 @@ class assign_feedback_editpdf extends assign_feedback_plugin {
         }
 
         return true;
+    }
+
+    /**
+     * Support quick grading.
+     *
+     * @return boolean - True if the plugin supports quickgrading
+     */
+    public function supports_quickgrading() {
+        return true;
+    }
+
+    /**
+     * Get the html widget for qucik grading if there is a file submitted.
+     *
+     * @param int $userid The user id in the table this quickgrading element relates to
+     * @param mixed $grade grade or null - The grade data.
+     *                     May be null if there are no grades for this user (yet)
+     * @return string
+     */
+    public function get_quickgrading_html($userid, $grade) {
+        global $PAGE;
+
+        // Fetch submission status.
+        $files = document_services::list_compatible_submission_files_for_attempt($this->assignment, $userid, -1);
+        if (!$files) {
+            return '';
+        }
+
+        $attrib = array('type' => 'hidden', 'name' => 'editpdf_has_changes_'.$userid, 'value' => 0);
+        $modifiedfield = html_writer::empty_tag('input', $attrib);
+
+        $renderer = $PAGE->get_renderer('assignfeedback_editpdf');
+        $widget = $this->get_widget($userid, $grade, false);
+        return $renderer->render($widget).$modifiedfield;
+    }
+
+    /**
+     * Check if there are any changes to save.
+     *
+     * @param int $userid
+     * @param stdClass $grade
+     * @return bool
+     */
+    public function is_quickgrading_modified($userid, $grade) {
+        return optional_param('editpdf_has_changes_'.$userid, false, PARAM_BOOL);
+    }
+
+    /**
+     * Generate a new PDF.
+     *
+     * @param int $userid
+     * @param stdClass $grade
+     * @return bool
+     */
+    public function save_quickgrading_changes($userid, $grade) {
+        if (page_editor::has_annotations_or_comments($grade->id, true)) {
+            document_services::generate_feedback_document($this->assignment, $grade->userid, $grade->attemptnumber);
+        }
     }
 
     /**
