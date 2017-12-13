@@ -85,7 +85,7 @@ class mod_choice_mod_form extends moodleform_mod {
 
         $mform->addElement('advcheckbox', 'showpreview', get_string('showpreview', 'choice'));
         $mform->addHelpButton('showpreview', 'showpreview', 'choice');
-        $mform->disabledIf('showpreview', 'timeopen[enabled]');
+        $mform->hideIf('showpreview', 'timeopen[enabled]');
 
 //-------------------------------------------------------------------------------
         $mform->addElement('header', 'resultshdr', get_string('results', 'choice'));
