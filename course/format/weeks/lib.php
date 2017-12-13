@@ -315,7 +315,7 @@ class format_weeks extends format_base {
 
         // Re-order things.
         $mform->insertElementBefore($mform->removeElement('automaticenddate', false), 'idnumber');
-        $mform->disabledIf('enddate', 'automaticenddate', 'checked');
+        $mform->hideIf('enddate', 'automaticenddate', 'checked');
         foreach ($elements as $key => $element) {
             if ($element->getName() == 'automaticenddate') {
                 unset($elements[$key]);
