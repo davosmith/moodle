@@ -131,7 +131,7 @@ class edit_category_form extends moodleform {
         $mform->addElement('select', 'grade_item_gradetype', get_string('gradetype', 'grades'), $options);
         $mform->addHelpButton('grade_item_gradetype', 'gradetype', 'grades');
         $mform->setDefault('grade_item_gradetype', GRADE_TYPE_VALUE);
-        $mform->disabledIf('grade_item_gradetype', 'aggregation', 'eq', GRADE_AGGREGATE_SUM);
+        $mform->hideIf('grade_item_gradetype', 'aggregation', 'eq', GRADE_AGGREGATE_SUM);
 
         //$mform->addElement('text', 'calculation', get_string('calculation', 'grades'));
         //$mform->disabledIf('calculation', 'gradetype', 'eq', GRADE_TYPE_TEXT);
@@ -156,8 +156,8 @@ class edit_category_form extends moodleform {
         }
         $mform->addElement('select', 'grade_item_scaleid', get_string('scale'), $options);
         $mform->addHelpButton('grade_item_scaleid', 'typescale', 'grades');
-        $mform->disabledIf('grade_item_scaleid', 'grade_item_gradetype', 'noteq', GRADE_TYPE_SCALE);
-        $mform->disabledIf('grade_item_scaleid', 'aggregation', 'eq', GRADE_AGGREGATE_SUM);
+        $mform->hideIf('grade_item_scaleid', 'grade_item_gradetype', 'noteq', GRADE_TYPE_SCALE);
+        $mform->hideIf('grade_item_scaleid', 'aggregation', 'eq', GRADE_AGGREGATE_SUM);
 
         $choices = array();
         $choices[''] = get_string('choose');
@@ -170,22 +170,22 @@ class edit_category_form extends moodleform {
         $mform->addElement('text', 'grade_item_grademax', get_string('grademax', 'grades'));
         $mform->setType('grade_item_grademax', PARAM_RAW);
         $mform->addHelpButton('grade_item_grademax', 'grademax', 'grades');
-        $mform->disabledIf('grade_item_grademax', 'grade_item_gradetype', 'noteq', GRADE_TYPE_VALUE);
-        $mform->disabledIf('grade_item_grademax', 'aggregation', 'eq', GRADE_AGGREGATE_SUM);
+        $mform->hideIf('grade_item_grademax', 'grade_item_gradetype', 'noteq', GRADE_TYPE_VALUE);
+        $mform->hideIf('grade_item_grademax', 'aggregation', 'eq', GRADE_AGGREGATE_SUM);
 
         if ((bool) get_config('moodle', 'grade_report_showmin')) {
             $mform->addElement('text', 'grade_item_grademin', get_string('grademin', 'grades'));
             $mform->setType('grade_item_grademin', PARAM_RAW);
             $mform->addHelpButton('grade_item_grademin', 'grademin', 'grades');
-            $mform->disabledIf('grade_item_grademin', 'grade_item_gradetype', 'noteq', GRADE_TYPE_VALUE);
-            $mform->disabledIf('grade_item_grademin', 'aggregation', 'eq', GRADE_AGGREGATE_SUM);
+            $mform->hideIf('grade_item_grademin', 'grade_item_gradetype', 'noteq', GRADE_TYPE_VALUE);
+            $mform->hideIf('grade_item_grademin', 'aggregation', 'eq', GRADE_AGGREGATE_SUM);
         }
 
         $mform->addElement('text', 'grade_item_gradepass', get_string('gradepass', 'grades'));
         $mform->setType('grade_item_gradepass', PARAM_RAW);
         $mform->addHelpButton('grade_item_gradepass', 'gradepass', 'grades');
-        $mform->disabledIf('grade_item_gradepass', 'grade_item_gradetype', 'eq', GRADE_TYPE_NONE);
-        $mform->disabledIf('grade_item_gradepass', 'grade_item_gradetype', 'eq', GRADE_TYPE_TEXT);
+        $mform->hideIf('grade_item_gradepass', 'grade_item_gradetype', 'eq', GRADE_TYPE_NONE);
+        $mform->hideIf('grade_item_gradepass', 'grade_item_gradetype', 'eq', GRADE_TYPE_TEXT);
 
         /// grade display prefs
         $default_gradedisplaytype = grade_get_setting($COURSE->id, 'displaytype', $CFG->grade_displaytype);
@@ -217,10 +217,10 @@ class edit_category_form extends moodleform {
         $mform->addElement('select', 'grade_item_decimals', get_string('decimalpoints', 'grades'), $options);
         $mform->addHelpButton('grade_item_decimals', 'decimalpoints', 'grades');
         $mform->setDefault('grade_item_decimals', -1);
-        $mform->disabledIf('grade_item_decimals', 'grade_item_display', 'eq', GRADE_DISPLAY_TYPE_LETTER);
+        $mform->hideIf('grade_item_decimals', 'grade_item_display', 'eq', GRADE_DISPLAY_TYPE_LETTER);
 
         if ($default_gradedisplaytype == GRADE_DISPLAY_TYPE_LETTER) {
-            $mform->disabledIf('grade_item_decimals', 'grade_item_display', "eq", GRADE_DISPLAY_TYPE_DEFAULT);
+            $mform->hideIf('grade_item_decimals', 'grade_item_display', "eq", GRADE_DISPLAY_TYPE_DEFAULT);
         }
 
         /// hiding

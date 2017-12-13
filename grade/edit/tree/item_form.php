@@ -100,7 +100,7 @@ class edit_item_form extends moodleform {
         }
         $mform->addElement('select', 'scaleid', get_string('scale'), $options);
         $mform->addHelpButton('scaleid', 'typescale', 'grades');
-        $mform->disabledIf('scaleid', 'gradetype', 'noteq', GRADE_TYPE_SCALE);
+        $mform->hideIf('scaleid', 'gradetype', 'noteq', GRADE_TYPE_SCALE);
 
         $choices = array();
         $choices[''] = get_string('choose');
@@ -108,38 +108,38 @@ class edit_item_form extends moodleform {
         $choices['yes'] = get_string('yes');
         $mform->addElement('select', 'rescalegrades', get_string('modgraderescalegrades', 'grades'), $choices);
         $mform->addHelpButton('rescalegrades', 'modgraderescalegrades', 'grades');
-        $mform->disabledIf('rescalegrades', 'gradetype', 'noteq', GRADE_TYPE_VALUE);
+        $mform->hideIf('rescalegrades', 'gradetype', 'noteq', GRADE_TYPE_VALUE);
 
         $mform->addElement('text', 'grademax', get_string('grademax', 'grades'));
         $mform->addHelpButton('grademax', 'grademax', 'grades');
-        $mform->disabledIf('grademax', 'gradetype', 'noteq', GRADE_TYPE_VALUE);
+        $mform->hideIf('grademax', 'gradetype', 'noteq', GRADE_TYPE_VALUE);
         $mform->setType('grademax', PARAM_RAW);
 
         if ((bool) get_config('moodle', 'grade_report_showmin')) {
             $mform->addElement('text', 'grademin', get_string('grademin', 'grades'));
             $mform->addHelpButton('grademin', 'grademin', 'grades');
-            $mform->disabledIf('grademin', 'gradetype', 'noteq', GRADE_TYPE_VALUE);
+            $mform->hideIf('grademin', 'gradetype', 'noteq', GRADE_TYPE_VALUE);
             $mform->setType('grademin', PARAM_RAW);
         }
 
         $mform->addElement('text', 'gradepass', get_string('gradepass', 'grades'));
         $mform->addHelpButton('gradepass', 'gradepass', 'grades');
-        $mform->disabledIf('gradepass', 'gradetype', 'eq', GRADE_TYPE_NONE);
-        $mform->disabledIf('gradepass', 'gradetype', 'eq', GRADE_TYPE_TEXT);
+        $mform->hideIf('gradepass', 'gradetype', 'eq', GRADE_TYPE_NONE);
+        $mform->hideIf('gradepass', 'gradetype', 'eq', GRADE_TYPE_TEXT);
         $mform->setType('gradepass', PARAM_RAW);
 
         $mform->addElement('text', 'multfactor', get_string('multfactor', 'grades'));
         $mform->addHelpButton('multfactor', 'multfactor', 'grades');
         $mform->setAdvanced('multfactor');
-        $mform->disabledIf('multfactor', 'gradetype', 'eq', GRADE_TYPE_NONE);
-        $mform->disabledIf('multfactor', 'gradetype', 'eq', GRADE_TYPE_TEXT);
+        $mform->hideIf('multfactor', 'gradetype', 'eq', GRADE_TYPE_NONE);
+        $mform->hideIf('multfactor', 'gradetype', 'eq', GRADE_TYPE_TEXT);
         $mform->setType('multfactor', PARAM_RAW);
 
         $mform->addElement('text', 'plusfactor', get_string('plusfactor', 'grades'));
         $mform->addHelpButton('plusfactor', 'plusfactor', 'grades');
         $mform->setAdvanced('plusfactor');
-        $mform->disabledIf('plusfactor', 'gradetype', 'eq', GRADE_TYPE_NONE);
-        $mform->disabledIf('plusfactor', 'gradetype', 'eq', GRADE_TYPE_TEXT);
+        $mform->hideIf('plusfactor', 'gradetype', 'eq', GRADE_TYPE_NONE);
+        $mform->hideIf('plusfactor', 'gradetype', 'eq', GRADE_TYPE_TEXT);
         $mform->setType('plusfactor', PARAM_RAW);
 
         /// grade display prefs
@@ -172,9 +172,9 @@ class edit_item_form extends moodleform {
         $mform->addElement('select', 'decimals', get_string('decimalpoints', 'grades'), $options);
         $mform->addHelpButton('decimals', 'decimalpoints', 'grades');
         $mform->setDefault('decimals', -1);
-        $mform->disabledIf('decimals', 'display', 'eq', GRADE_DISPLAY_TYPE_LETTER);
+        $mform->hideIf('decimals', 'display', 'eq', GRADE_DISPLAY_TYPE_LETTER);
         if ($default_gradedisplaytype == GRADE_DISPLAY_TYPE_LETTER) {
-            $mform->disabledIf('decimals', 'display', "eq", GRADE_DISPLAY_TYPE_DEFAULT);
+            $mform->hideIf('decimals', 'display', "eq", GRADE_DISPLAY_TYPE_DEFAULT);
         }
 
         /// hiding
@@ -196,22 +196,22 @@ class edit_item_form extends moodleform {
         $mform->addHelpButton('locked', 'locked', 'grades');
 
         $mform->addElement('date_time_selector', 'locktime', get_string('locktime', 'grades'), array('optional'=>true));
-        $mform->disabledIf('locktime', 'gradetype', 'eq', GRADE_TYPE_NONE);
+        $mform->hideIf('locktime', 'gradetype', 'eq', GRADE_TYPE_NONE);
 
 /// parent category related settings
         $mform->addElement('header', 'headerparent', get_string('parentcategory', 'grades'));
 
         $mform->addElement('advcheckbox', 'weightoverride', get_string('adjustedweight', 'grades'));
         $mform->addHelpButton('weightoverride', 'weightoverride', 'grades');
-        $mform->disabledIf('weightoverride', 'gradetype', 'eq', GRADE_TYPE_NONE);
-        $mform->disabledIf('weightoverride', 'gradetype', 'eq', GRADE_TYPE_TEXT);
+        $mform->hideIf('weightoverride', 'gradetype', 'eq', GRADE_TYPE_NONE);
+        $mform->hideIf('weightoverride', 'gradetype', 'eq', GRADE_TYPE_TEXT);
 
         $mform->addElement('text', 'aggregationcoef2', get_string('weight', 'grades'));
         $mform->addHelpButton('aggregationcoef2', 'weight', 'grades');
         $mform->setType('aggregationcoef2', PARAM_RAW);
         $mform->disabledIf('aggregationcoef2', 'weightoverride');
-        $mform->disabledIf('aggregationcoef2', 'gradetype', 'eq', GRADE_TYPE_NONE);
-        $mform->disabledIf('aggregationcoef2', 'gradetype', 'eq', GRADE_TYPE_TEXT);
+        $mform->hideIf('aggregationcoef2', 'gradetype', 'eq', GRADE_TYPE_NONE);
+        $mform->hideIf('aggregationcoef2', 'gradetype', 'eq', GRADE_TYPE_TEXT);
 
         $options = array();
         $coefstring = '';
@@ -369,8 +369,8 @@ class edit_item_form extends moodleform {
                 }
                 $mform->addHelpButton('aggregationcoef', $coefstring, 'grades');
             }
-            $mform->disabledIf('aggregationcoef', 'gradetype', 'eq', GRADE_TYPE_NONE);
-            $mform->disabledIf('aggregationcoef', 'gradetype', 'eq', GRADE_TYPE_TEXT);
+            $mform->hideIf('aggregationcoef', 'gradetype', 'eq', GRADE_TYPE_NONE);
+            $mform->hideIf('aggregationcoef', 'gradetype', 'eq', GRADE_TYPE_TEXT);
             $mform->disabledIf('aggregationcoef', 'parentcategory', 'eq', $parentcategory->id);
         }
 
