@@ -120,9 +120,12 @@ if (lti_request_is_using_ssl() && !empty($type->lti_secureicon)) {
 } else {
     $type->oldicon = $type->lti_icon;
 }
+$tool = lti_get_type_by_id($id);
+$toolconfig = lti_get_type_config($id);
 
 $form = new mod_lti_edit_types_form($pageurl,
-    (object)array('isadmin' => true, 'istool' => false, 'id' => $id, 'clientid' => $type->lti_clientid));
+        (object) ['isadmin' => true, 'istool' => false, 'id' => $id, 'clientid' => $type->lti_clientid,
+                  'tool'    => $tool, 'toolconfig' => $toolconfig]);
 
 if ($data = $form->get_data()) {
     $type = new stdClass();
@@ -131,11 +134,16 @@ if ($data = $form->get_data()) {
         lti_load_type_if_cartridge($data);
         lti_update_type($type, $data);
 
+        lti_save_icon($form, $type->id);
+        lti_clear_course_cache_refresh_icons($id);
+
         redirect($redirect);
     } else {
         $type->state = LTI_TOOL_STATE_CONFIGURED;
         lti_load_type_if_cartridge($data);
-        lti_add_type($type, $data);
+        $type->typeid = lti_add_type($type, $data);
+
+        lti_save_icon($form, $type->typeid);
 
         redirect($redirect);
     }
@@ -152,6 +160,8 @@ echo $OUTPUT->box_start('generalbox');
 
 if ($action == 'update') {
     $form->set_data($type);
+} else {
+    $form->set_data(new stdClass());
 }
 
 $form->display();

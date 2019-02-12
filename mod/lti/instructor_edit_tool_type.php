@@ -48,6 +48,8 @@ if (!empty($typeid)) {
         throw new Exception('You do not have permissions to edit this tool type.');
         die;
     }
+} else {
+    $type = null;
 }
 
 // Delete action is called via ajax.
@@ -64,6 +66,8 @@ if (defined('BEHAT_SITE_RUNNING') && BEHAT_SITE_RUNNING) {
 
 echo $OUTPUT->header();
 
+$typeconfig = lti_get_type_config($typeid);
+
 if ($action == 'edit') {
     $type = lti_get_type_type_config($typeid);
 } else {
@@ -71,12 +75,15 @@ if ($action == 'edit') {
     $type->lti_clientid = null;
 }
 
-$form = new mod_lti_edit_types_form($url, (object)array('id' => $typeid, 'clientid' => $type->lti_clientid));
+$form = new mod_lti_edit_types_form($url, (object)array('id' => $typeid, 'clientid' => $type->lti_clientid,
+    'toolconfig' => $typeconfig));
 
 // If the user just opened an add or edit form.
 if ($action == 'add' || $action == 'edit') {
     if ($action == 'edit') {
         $form->set_data($type);
+    } else {
+        $form->set_data(new stdClass());
     }
     echo $OUTPUT->heading(get_string('toolsetup', 'lti'));
     $form->display();
@@ -98,6 +105,9 @@ EOF;
 
             lti_update_type($type, $data);
 
+            lti_save_icon($form, $type->id);
+            lti_clear_course_cache_refresh_icons($typeid);
+
             $fromdb = lti_get_type($typeid);
             $json = json_encode($fromdb);
 
@@ -112,6 +122,8 @@ EOF;
             lti_load_type_if_cartridge($data);
 
             $id = lti_add_type($type, $data);
+
+            lti_save_icon($form, $id);
 
             $fromdb = lti_get_type($id);
             $json = json_encode($fromdb);

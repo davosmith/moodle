@@ -52,6 +52,7 @@ defined('MOODLE_INTERNAL') || die;
 global $CFG;
 require_once($CFG->libdir.'/formslib.php');
 require_once($CFG->dirroot.'/mod/lti/locallib.php');
+require_once($CFG->dirroot.'/mod/lti/lib.php');
 
 /**
  * LTI Edit Form
@@ -213,18 +214,41 @@ class mod_lti_edit_types_form extends moodleform {
             $mform->disabledIf('lti_toolurl__ContentItemSelectionRequest', null);
         }
 
+        $mform->addElement('header', 'icon_header', get_string('icon', 'lti'));
+
+        $tool = isset($this->_customdata->tool) ? $this->_customdata->tool : null;
+        $toolconfig = isset($this->_customdata->toolconfig) ? $this->_customdata->toolconfig : null;
+
+        $mform->addElement('html', lti_get_icon_preview_for_form($tool, $toolconfig));
+
         $mform->addElement('hidden', 'oldicon');
         $mform->setType('oldicon', PARAM_URL);
 
         $mform->addElement('text', 'lti_icon', get_string('icon_url', 'lti'), array('size' => '64'));
         $mform->setType('lti_icon', PARAM_URL);
-        $mform->setAdvanced('lti_icon');
         $mform->addHelpButton('lti_icon', 'icon_url', 'lti');
 
         $mform->addElement('text', 'lti_secureicon', get_string('secure_icon_url', 'lti'), array('size' => '64'));
         $mform->setType('lti_secureicon', PARAM_URL);
-        $mform->setAdvanced('lti_secureicon');
         $mform->addHelpButton('lti_secureicon', 'secure_icon_url', 'lti');
+
+        // Prepare file upload.
+        $filemanageroptions = array(
+            'return_types' => 3,
+            'accepted_types' => 'web_image',
+            'subdirs' => 0,
+            'maxbytes' => 0,
+            'maxfiles' => 1,
+            'mainfile' => true
+        );
+        $mform->addElement('filepicker', 'uploadedicon', get_string('icon'), null, $filemanageroptions);
+
+        if (isset($tool->id)) {
+            $icon = lti_get_tooltype_uploadedicon($tool->id);
+            if (!empty($icon)) {
+                $mform->addElement('checkbox', 'deleteuploadedicon', get_string('deleteuploadedicon', 'lti'));
+            }
+        }
 
         if (!$istool) {
             // Display the lti advantage services.

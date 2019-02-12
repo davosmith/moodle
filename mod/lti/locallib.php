@@ -2039,6 +2039,17 @@ function lti_get_type_config($typeid) {
     return $typeconfig;
 }
 
+/**
+ * Get tool type from database by id.
+ * @param int $tooltypeid
+ * @return mixed
+ */
+function lti_get_type_by_id($tooltypeid) {
+    global $DB;
+
+    return $DB->get_record('lti_types', array('id' => $tooltypeid));
+}
+
 function lti_get_tools_by_url($url, $state, $courseid = null) {
     $domain = lti_get_domain_from_url($url);
 
@@ -2341,6 +2352,8 @@ function lti_delete_type($id) {
 
     $DB->delete_records('lti_types', array('id' => $id));
     $DB->delete_records('lti_types_config', array('typeid' => $id));
+
+    lti_delete_tooltype_icon($id);
 }
 
 function lti_set_state_for_type($id, $state) {
@@ -2630,6 +2643,10 @@ function lti_update_type($type, $config) {
                 rebuild_course_cache($courseid, true);
             }
         }
+    }
+
+    if (isset($config->deleteuploadedicon) && !empty($config->deleteuploadedicon)) {
+        lti_delete_tooltype_icon($type->id);
     }
 }
 
@@ -3465,15 +3482,16 @@ function lti_log_response($responsexml, $e = null) {
  */
 function lti_get_type_config_by_instance($instance) {
     $typeid = null;
-    if (empty($instance->typeid)) {
+    if (!empty($instance->typeid)) {
+        $typeid = $instance->typeid;
+    } else if (isset($instance->toolurl)) {
         $tool = lti_get_tool_by_url_match($instance->toolurl, $instance->course);
         if ($tool) {
             $typeid = $tool->id;
         }
-    } else {
-        $typeid = $instance->typeid;
     }
-    if (!empty($typeid)) {
+
+    if (isset($typeid)) {
         return lti_get_type_config($typeid);
     }
     return array();
@@ -3751,10 +3769,21 @@ function get_tool_type_course_url(stdClass $type) {
  * @return array The urls of the tool type
  */
 function get_tool_type_urls(stdClass $type) {
+    global $OUTPUT;
+
     $courseurl = get_tool_type_course_url($type);
+    $toolconfig = lti_get_type_config($type->id);
+
+    $customiconurl = lti_get_custom_icon_url(null, null, $type, $toolconfig);
+    if (!isset($customiconurl)) {
+        $icon = new pix_icon('icon', '', 'mod_lti');
+        $iconurl = $OUTPUT->image_url($icon->pix, $icon->component);
+    } else {
+        $iconurl = $customiconurl->out();
+    }
 
     $urls = array(
-        'icon' => get_tool_type_icon_url($type),
+        'icon' => $iconurl,
         'edit' => get_tool_type_edit_url($type),
     );
 
@@ -4212,6 +4241,33 @@ function get_tag($tagname, $xpath, $attribute = null) {
         return $result->item(0)->nodeValue;
     }
     return null;
+}
+
+/**
+ * Save the uploaded icon from a form.
+ *
+ * @param moodleform $form
+ * @param int $id
+ * @param context $context (if null uses system context)
+ * @throws Exception
+ * @throws dml_exception
+ */
+function lti_save_icon($form, $id, $context = null) {
+    global $CFG;
+
+    if (!$form) {
+        return; // Happens when running unit tests.
+    }
+
+    if (!$context) {
+        $context = context_system::instance();
+    }
+
+    if ($iconfile = $form->save_temp_file('uploadedicon')) {
+        require_once($CFG->libdir.'/gdlib.php');
+        process_new_icon($context, 'mod_lti', 'icon', $id, $iconfile);
+        @unlink($iconfile);
+    }
 }
 
 /**

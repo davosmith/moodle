@@ -64,6 +64,10 @@
     padding-right: 1em;
 } /* Prevent setting titles from wrapping */
 
+span.lti_icon_source {
+    padding-left: 5px;
+}
+
 /* Styling for tool_configure page */
 #registration-choice-container .buffer-text {
     margin: 20px;

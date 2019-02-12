@@ -200,17 +200,52 @@ class mod_lti_mod_form extends moodleform_mod {
         $mform->addHelpButton('instructorcustomparameters', 'custom', 'lti');
         $mform->setForceLtr('instructorcustomparameters');
 
+        $mform->addElement('header', 'icon_header', get_string('icon', 'lti'));
+
+        if (isset($this->current)) {
+            $cm = clone($this->current);
+            $cm->id = $cm->coursemodule;
+
+            if (!empty($this->current->typeid)) {
+                $tool = lti_get_type($this->current->typeid);
+            } else if (isset($this->current->toolurl)) {
+                $tool = lti_get_tool_by_url_match($this->current->toolurl, $this->current->course);
+            } else {
+                $tool = null;
+            }
+
+            $toolconfig = lti_get_type_config_by_instance($this->current);
+
+            $mform->addElement('html', lti_get_icon_preview_for_form($tool, $toolconfig, $cm, $this->current));
+        }
+
         $mform->addElement('text', 'icon', get_string('icon_url', 'lti'), array('size' => '64'));
         $mform->setType('icon', PARAM_URL);
-        $mform->setAdvanced('icon');
         $mform->addHelpButton('icon', 'icon_url', 'lti');
         $mform->hideIf('icon', 'typeid', 'in', $noncontentitemtypes);
 
         $mform->addElement('text', 'secureicon', get_string('secure_icon_url', 'lti'), array('size' => '64'));
         $mform->setType('secureicon', PARAM_URL);
-        $mform->setAdvanced('secureicon');
         $mform->addHelpButton('secureicon', 'secure_icon_url', 'lti');
         $mform->hideIf('secureicon', 'typeid', 'in', $noncontentitemtypes);
+
+        // Prepare file upload.
+        $filemanageroptions = array(
+            'return_types' => 3,
+            'accepted_types' => 'web_image',
+            'subdirs' => 0,
+            'maxbytes' => $COURSE->maxbytes,
+            'maxfiles' => 1,
+            'mainfile' => true
+        );
+        $mform->addElement('filepicker', 'uploadedicon', get_string('icon'), null, $filemanageroptions);
+
+        if (!empty($this->current->coursemodule)) {
+            $icon = lti_get_activity_uploadedicon($this->current->coursemodule);
+            if (!empty($icon)) {
+                $mform->addElement('checkbox', 'deleteuploadedicon', get_string('deleteuploadedicon', 'lti'));
+            }
+        }
 
         // Add privacy preferences fieldset where users choose whether to send their data.
         $mform->addElement('header', 'privacy', get_string('privacy', 'lti'));

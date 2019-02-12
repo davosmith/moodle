@@ -48,6 +48,9 @@
 
 defined('MOODLE_INTERNAL') || die;
 
+/** Item ID to be used when storing icons. */
+define('LTI_ICON_ITEMID', 1);
+
 /**
  * List of features supported in URL module
  * @param string $feature FEATURE_xx constant for requested feature
@@ -118,6 +121,9 @@ function lti_add_instance($lti, $mform) {
         lti_grade_item_update($lti);
     }
 
+    $context = context_module::instance($lti->coursemodule);
+    lti_save_icon($mform, LTI_ICON_ITEMID, $context);
+
     $completiontimeexpected = !empty($lti->completionexpected) ? $lti->completionexpected : null;
     \core_completion\api::update_completion_date_event($lti->coursemodule, 'lti', $lti->id, $completiontimeexpected);
 
@@ -164,6 +170,15 @@ function lti_update_instance($lti, $mform) {
     if ($lti->typeid == 0 && isset($lti->urlmatchedtypeid)) {
         $lti->typeid = $lti->urlmatchedtypeid;
     }
+
+    $cm = get_coursemodule_from_instance('lti', $lti->instance, 0, false, MUST_EXIST);
+    $context = context_module::instance($cm->id);
+
+    if (isset($lti->deleteuploadedicon) && !empty($lti->deleteuploadedicon)) {
+        lti_delete_activity_icon($context);
+    }
+
+    lti_save_icon($mform, LTI_ICON_ITEMID, $context);
 
     $completiontimeexpected = !empty($lti->completionexpected) ? $lti->completionexpected : null;
     \core_completion\api::update_completion_date_event($lti->coursemodule, 'lti', $lti->id, $completiontimeexpected);
@@ -239,7 +254,7 @@ function lti_get_shortcuts($defaultitem) {
  * For this module we just need to support external urls as
  * activity icons
  *
- * @param stdClass $coursemodule
+ * @param cm_info $coursemodule
  * @return cached_cm_info info
  */
 function lti_get_coursemodule_info($coursemodule) {
@@ -258,27 +273,18 @@ function lti_get_coursemodule_info($coursemodule) {
         $info->content = format_module_intro('lti', $lti, $coursemodule->id, false);
     }
 
-    if (!empty($lti->typeid)) {
-        $toolconfig = lti_get_type_config($lti->typeid);
-    } else if ($tool = lti_get_tool_by_url_match($lti->toolurl)) {
+
+    if (empty($lti->typeid)) {
+        $tool = lti_get_tool_by_url_match($lti->toolurl, $coursemodule->course);
+    } else {
+        $tool = lti_get_type($lti->typeid);
+    }
+
+    // Does the link open in a new window?
+    if ($tool) {
         $toolconfig = lti_get_type_config($tool->id);
     } else {
         $toolconfig = array();
-    }
-
-    // We want to use the right icon based on whether the
-    // current page is being requested over http or https.
-    if (lti_request_is_using_ssl() &&
-        (!empty($lti->secureicon) || (isset($toolconfig['secureicon']) && !empty($toolconfig['secureicon'])))) {
-        if (!empty($lti->secureicon)) {
-            $info->iconurl = new moodle_url($lti->secureicon);
-        } else {
-            $info->iconurl = new moodle_url($toolconfig['secureicon']);
-        }
-    } else if (!empty($lti->icon)) {
-        $info->iconurl = new moodle_url($lti->icon);
-    } else if (isset($toolconfig['icon']) && !empty($toolconfig['icon'])) {
-        $info->iconurl = new moodle_url($toolconfig['icon']);
     }
 
     // Does the link open in a new window?
@@ -289,6 +295,8 @@ function lti_get_coursemodule_info($coursemodule) {
     }
 
     $info->name = $lti->name;
+
+    $info->iconurl = lti_get_custom_icon_url($coursemodule, $lti, $tool, $toolconfig);
 
     return $info;
 }
@@ -649,4 +657,250 @@ function mod_lti_core_calendar_provide_event_action(calendar_event $event,
         1,
         true
     );
+}
+
+/**
+ * Generate a preview of the LTI icon.
+ * @param stdClass $tool External tool
+ * @param array $toolconfig Config for the external tool
+ * @param cm_info $coursemodule Course module being displayed
+ * @param stdClass $lti LTI instance being displayed
+ * @return string HTML to display the correct icon and source for an LTI activity or tool
+ */
+function lti_get_icon_preview_for_form($tool, $toolconfig, $coursemodule = null, $lti = null) {
+    global $OUTPUT;
+
+    $imgpreview = html_writer::start_div('fitem');
+
+    $imgpreview .= html_writer::start_div('fitemtitle');
+    $imgpreview .= html_writer::label(get_string('iconpreview', 'lti'), 'id_iconpreview');
+    $imgpreview .= $OUTPUT->help_icon('icon', 'lti');
+    $imgpreview .= html_writer::end_div();
+
+    $imgpreview .= html_writer::start_div('felement');
+
+    $iconurl = lti_get_custom_icon_url($coursemodule, $lti, $tool, $toolconfig);
+    if (!isset($iconurl)) {
+        $icon = new pix_icon('icon', '', 'mod_lti');
+        $iconurl = $OUTPUT->image_url($icon->pix, $icon->component);
+    }
+
+    $imgpreview .= html_writer::img($iconurl, '');
+    $imgpreview .= html_writer::span(lti_get_icon_source_description($coursemodule, $lti, $tool, $toolconfig), 'lti_icon_source');
+    $imgpreview .= html_writer::end_div();
+
+    $imgpreview .= html_writer::end_div();
+
+    return $imgpreview;
+}
+
+/**
+ * Get the url for the custom icon for an LTI activity.
+ * @param cm_info $coursemodule Course module being displayed
+ * @param stdClass $lti LTI instance being displayed
+ * @param stdClass $tool External tool definition
+ * @param array $toolconfig  Config for the external tool
+ * @return moodle_url|null URL for the custom icon to display
+ */
+function lti_get_custom_icon_url($coursemodule, $lti, $tool, $toolconfig) {
+    if (isset($coursemodule) && !empty($coursemodule->id)) {
+        if ($activityuploadedicon = lti_get_activity_uploadedicon($coursemodule->id)) {
+            return $activityuploadedicon;
+        }
+    }
+
+    if (isset($lti)) {
+        if (lti_request_is_using_ssl() && !empty($lti->secureicon)) {
+            return new moodle_url($lti->secureicon);
+        } else if (!empty($lti->icon)) {
+            return new moodle_url($lti->icon);
+        }
+    }
+
+    if (isset($tool) && isset($tool->id)) {
+        if ($toolicon = lti_get_tooltype_uploadedicon($tool->id)) {
+            return $toolicon;
+        }
+    }
+
+    if (!empty($toolconfig)) {
+        if (lti_request_is_using_ssl() && !empty($toolconfig['secureicon'])) {
+            return new moodle_url($toolconfig['secureicon']);
+        } else if (!empty($toolconfig['icon'])) {
+            return new moodle_url($toolconfig['icon']);
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Get a description of which configuration setting against the activity or
+ * tool type has been used as the source for the icon of an activity.
+ * @param cm_info $coursemodule Course module being displayed
+ * @param stdClass $lti LTI instance being displayed
+ * @param stdClass $tool External tool
+ * @param array $toolconfig Config for the external tool
+ * @return string Description of where the icon came from
+ */
+function lti_get_icon_source_description($coursemodule, $lti, $tool, $toolconfig) {
+    if (isset($coursemodule) && !empty($coursemodule->id)) {
+        if ($activityuploadedicon = lti_get_activity_uploadedicon($coursemodule->id)) {
+            return get_string('iconsource_activityupload', 'lti');
+        }
+    }
+
+    if (isset($lti)) {
+        if (lti_request_is_using_ssl() && !empty($lti->secureicon)) {
+            return get_string('iconsource_activitysecureurl', 'lti');
+        } else if (!empty($lti->icon)) {
+            return get_string('iconsource_activityurl', 'lti');
+        }
+    }
+
+    if (isset($tool) && isset($tool->id)) {
+        if ($toolicon = lti_get_tooltype_uploadedicon($tool->id)) {
+            return get_string('iconsource_toolupload', 'lti', $tool->name);
+        }
+    }
+
+    if (isset($toolconfig)) {
+        if (lti_request_is_using_ssl() && !empty($toolconfig['secureicon'])) {
+            return get_string('iconsource_toolsecureurl', 'lti', $tool->name);
+        } else if (!empty($toolconfig['icon'])) {
+            return get_string('iconsource_toolurl', 'lti', $tool->name);
+        }
+    }
+
+    return get_string('iconsource_default', 'lti');
+}
+
+/**
+ * Get activity icon for a given coursemodule.
+ * @param int $cmid ID for coursemodule being displayed
+ * @return moodle_url|null URL to display the icon for the activity
+ */
+function lti_get_activity_uploadedicon($cmid) {
+    $ctx = context_module::instance($cmid);
+
+    $fs = get_file_storage();
+    $files = $fs->get_area_files($ctx->id, 'mod_lti', 'icon', LTI_ICON_ITEMID);
+
+    foreach ($files as $file) {
+        if ($file->get_filename() == '.') {
+            continue;
+        }
+        $iconfile = $file;
+        break;
+    }
+    if (!isset($iconfile)) {
+        return null;
+    }
+
+    return moodle_url::make_pluginfile_url(
+        $ctx->id, 'mod_lti', 'icon', LTI_ICON_ITEMID,
+        $iconfile->get_filepath(), $iconfile->get_filename()
+    );
+}
+
+/**
+ * Get activity icon url for a given tooltype.
+ * @param int $typeid Tool type id
+ * @return moodle_url|null URL to display the icon for the tool type
+ */
+function lti_get_tooltype_uploadedicon($typeid) {
+    $ctx = context_system::instance();
+    $fs = get_file_storage();
+    $files = $fs->get_area_files($ctx->id, 'mod_lti', 'icon', $typeid);
+
+    foreach ($files as $file) {
+        if ($file->get_filename() == '.') {
+            continue;
+        }
+        $iconfile = $file;
+        break;
+    }
+    if (!isset($iconfile)) {
+        return null;
+    }
+
+    return moodle_url::make_pluginfile_url($ctx->id, 'mod_lti', 'icon', $typeid, $file->get_filepath(), $file->get_filename());
+}
+
+/**
+ * Serves the resource files.
+ *
+ * @package  mod_lti
+ * @category files
+ * @param stdClass $course course object
+ * @param stdClass $cm course module object
+ * @param stdClass $context context object
+ * @param string $filearea file area
+ * @param array $args extra arguments
+ * @param bool $forcedownload whether or not force download
+ * @param array $options additional options affecting the file serving
+ * @return bool false if file not found, does not return if found - just send the file
+ */
+function lti_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, $options = array()) {
+    require_login($course, false, $cm);
+    if (!has_capability('mod/lti:view', $context)) {
+        return false;
+    }
+
+    if ($filearea != 'icon') {
+        return false;
+    }
+
+    $itemid = $args[0];
+    $filename = end($args);
+
+    $fs = get_file_storage();
+    if ($file = $fs->get_file($context->id, 'mod_lti', $filearea, $itemid, '/', $filename)) {
+        send_stored_file($file);
+    }
+
+    return false;
+}
+
+/**
+ * Method to rebuild caches for all courses that contain activities of a given ltitype
+ * this forces icons to be regenerated.
+ * @param int $ltitypeid LTI type to look for in course activities
+ */
+function lti_clear_course_cache_refresh_icons($ltitypeid) {
+    global $DB;
+
+    $params = array ('ltitypeid' => $ltitypeid);
+
+    $sql = "SELECT cm.course id
+              FROM {course_modules} cm
+              JOIN {lti} lti ON lti.id = cm.instance
+              JOIN {modules} m ON m.name = 'lti' AND cm.module = m.id
+             WHERE lti.typeid = :ltitypeid
+          GROUP BY cm.course";
+
+    $courses = $DB->get_records_sql($sql, $params);
+
+    foreach ($courses as $course) {
+        rebuild_course_cache($course->id, true);
+    }
+}
+
+/**
+ * Delete activity icon for a given activity.
+ * @param context_module $context Context of the activity
+ */
+function lti_delete_activity_icon($context) {
+    $fs = get_file_storage();
+    $fs->delete_area_files($context->id, 'mod_lti', 'icon', LTI_ICON_ITEMID);
+}
+
+/**
+ * Delete activity icon for a given tool type.
+ * @param int $typeid LTI tool type id
+ */
+function lti_delete_tooltype_icon($typeid) {
+    $context = context_system::instance();
+    $fs = get_file_storage();
+    $fs->delete_area_files($context->id, 'mod_lti', 'icon', $typeid);
 }

@@ -143,6 +143,7 @@ $string['delegate'] = 'Delegate to teacher';
 $string['delete'] = 'Delete';
 $string['delete_confirmation'] = 'Are you sure you want to delete this preconfigured tool?';
 $string['deletetype'] = 'Delete preconfigured tool';
+$string['deleteuploadedicon'] = 'Delete';
 $string['display_description'] = 'Display activity description when launched';
 $string['display_description_help'] = 'If selected, the activity description (specified above) will display above the tool provider\'s content.
 
@@ -212,9 +213,19 @@ If using this option, confirm that this Moodle site and the tool provider suppor
 $string['generaltool'] = 'General tool';
 $string['global_tool_types'] = 'Global preconfigured tools';
 $string['grading'] = 'Grade routing';
+$string['icon'] = 'Icon';
+$string['icon_help'] = 'The icon is displayed next to the activity name on the course page. The icon used is determined by checking first whether there is an uploaded icon in the activity settings, or an icon URL, and then repeating the checks in the external tool configuration site administration settings.';
 $string['icon_url'] = 'Icon URL';
 $string['icon_url_help'] = 'The icon URL allows the icon that shows up in the course listing for this activity to be modified. Instead of using the default
 LTI icon, an icon which conveys the type of activity may be specified.';
+$string['iconpreview'] = 'Icon preview';
+$string['iconsource_activityupload'] = 'The icon used is the uploaded icon in the activity settings.';
+$string['iconsource_activitysecureurl'] = 'The icon used is the secure icon URL specified in the activity settings.';
+$string['iconsource_activityurl'] = 'The icon used is the icon URL specified in the activity settings.';
+$string['iconsource_default'] = 'The icon used is the default external tool icon.';
+$string['iconsource_toolupload'] = 'The icon used is the uploaded icon in the {$a} external tool configuration.';
+$string['iconsource_toolsecureurl'] = 'The icon used is the secure icon URL specified in the {$a} external tool configuration.';
+$string['iconsource_toolurl'] = 'The icon used is the icon URL specified in the {$a} external tool configuration.';
 $string['id'] = 'ID';
 $string['indicator:cognitivedepth'] = 'LTI cognitive';
 $string['indicator:cognitivedepth_help'] = 'This indicator is based on the cognitive depth reached by the student in an LTI activity.';
