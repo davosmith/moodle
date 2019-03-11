@@ -179,18 +179,19 @@ M.core_availability.form = {
             return;
         }
 
+        var disabled = false;
+        var hidden = false;
+
         // If the root list is anything other than the default 'and' type, disable.
         if (this.rootList.getValue().op !== '&') {
-            this.restrictByGroup.set('disabled', true);
-            return;
+            disabled = true;
         }
 
         // If there's already a group restriction, disable it.
         var alreadyGot = this.rootList.hasItemOfType('group') ||
                 this.rootList.hasItemOfType('grouping');
         if (alreadyGot) {
-            this.restrictByGroup.set('disabled', true);
-            return;
+            disabled = true;
         }
 
         // If the groupmode and grouping id aren't set, disable it.
@@ -198,11 +199,16 @@ M.core_availability.form = {
         var groupingid = Y.one('#id_groupingid');
         if ((!groupmode || Number(groupmode.get('value')) === 0) &&
                 (!groupingid || Number(groupingid.get('value')) === 0)) {
-            this.restrictByGroup.set('disabled', true);
-            return;
+            disabled = true;
+            hidden = true;
         }
 
-        this.restrictByGroup.set('disabled', false);
+        if (!hidden) {
+            this.restrictByGroup.show();
+        } else {
+            this.restrictByGroup.hide();
+        }
+        this.restrictByGroup.set('disabled', disabled);
     },
 
     /**
