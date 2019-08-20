@@ -216,7 +216,15 @@ class mod_lti_mod_form extends moodleform_mod {
 
             $toolconfig = lti_get_type_config_by_instance($this->current);
 
-            $mform->addElement('html', lti_get_icon_preview_for_form($tool, $toolconfig, $cm, $this->current));
+            /** @var \mod_lti\output\renderer $output */
+            $output = $PAGE->get_renderer('mod_lti');
+            $imagevalue = $output->icon_preview_for_form($tool, $toolconfig, $cm, $this->current);
+            $mform->addElement('static', 'currenticon', get_string('iconpreview', 'lti'), $imagevalue);
+
+            $icon = lti_get_activity_uploadedicon($this->current->coursemodule);
+            if ($icon) {
+                $mform->addElement('checkbox', 'deleteuploadedicon', get_string('deleteuploadedicon', 'lti'));
+            }
         }
 
         $mform->addElement('text', 'icon', get_string('icon_url', 'lti'), array('size' => '64'));
@@ -239,13 +247,6 @@ class mod_lti_mod_form extends moodleform_mod {
             'mainfile' => true
         );
         $mform->addElement('filepicker', 'uploadedicon', get_string('icon'), null, $filemanageroptions);
-
-        if (!empty($this->current->coursemodule)) {
-            $icon = lti_get_activity_uploadedicon($this->current->coursemodule);
-            if (!empty($icon)) {
-                $mform->addElement('checkbox', 'deleteuploadedicon', get_string('deleteuploadedicon', 'lti'));
-            }
-        }
 
         // Add privacy preferences fieldset where users choose whether to send their data.
         $mform->addElement('header', 'privacy', get_string('privacy', 'lti'));

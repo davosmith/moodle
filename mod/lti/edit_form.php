@@ -219,7 +219,16 @@ class mod_lti_edit_types_form extends moodleform {
         $tool = isset($this->_customdata->tool) ? $this->_customdata->tool : null;
         $toolconfig = isset($this->_customdata->toolconfig) ? $this->_customdata->toolconfig : null;
 
-        $mform->addElement('html', lti_get_icon_preview_for_form($tool, $toolconfig));
+        /** @var \mod_lti\output\renderer $output */
+        $output = $PAGE->get_renderer('mod_lti');
+        $imagevalue = $output->icon_preview_for_form($tool, $toolconfig);
+        $mform->addElement('static', 'currenticon', get_string('iconpreview', 'lti'), $imagevalue);
+        if (isset($tool->id)) {
+            $icon = lti_get_tooltype_uploadedicon($tool->id);
+            if ($icon) {
+                $mform->addElement('checkbox', 'deleteuploadedicon', get_string('deleteuploadedicon', 'lti'));
+            }
+        }
 
         $mform->addElement('hidden', 'oldicon');
         $mform->setType('oldicon', PARAM_URL);
@@ -242,13 +251,6 @@ class mod_lti_edit_types_form extends moodleform {
             'mainfile' => true
         );
         $mform->addElement('filepicker', 'uploadedicon', get_string('icon'), null, $filemanageroptions);
-
-        if (isset($tool->id)) {
-            $icon = lti_get_tooltype_uploadedicon($tool->id);
-            if (!empty($icon)) {
-                $mform->addElement('checkbox', 'deleteuploadedicon', get_string('deleteuploadedicon', 'lti'));
-            }
-        }
 
         if (!$istool) {
             // Display the lti advantage services.

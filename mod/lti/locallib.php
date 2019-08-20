@@ -3777,7 +3777,7 @@ function get_tool_type_urls(stdClass $type) {
     $customiconurl = lti_get_custom_icon_url(null, null, $type, $toolconfig);
     if (!isset($customiconurl)) {
         $icon = new pix_icon('icon', '', 'mod_lti');
-        $iconurl = $OUTPUT->image_url($icon->pix, $icon->component);
+        $iconurl = $OUTPUT->image_url($icon->pix, $icon->component)->out();
     } else {
         $iconurl = $customiconurl->out();
     }

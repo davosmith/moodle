@@ -59,4 +59,28 @@ class renderer extends plugin_renderer_base {
         $data = $page->export_for_template($this);
         return parent::render_from_template('mod_lti/external_registration_return', $data);
     }
+
+    /**
+     * Render the icon preview for the form.
+     *
+     * @param object $tool
+     * @param array $toolconfig
+     * @param \cm_info $coursemodule (optional)
+     * @param object $lti (optional)
+     * @return string html for the icon
+     */
+    public function icon_preview_for_form($tool, $toolconfig, $coursemodule = null, $lti = null) {
+        $iconurl = lti_get_custom_icon_url($coursemodule, $lti, $tool, $toolconfig);
+        if (!$iconurl) {
+            $icon = new \pix_icon('icon', '', 'mod_lti');
+            $iconurl = $this->output->image_url($icon->pix, $icon->component);
+        }
+        $description = lti_get_icon_source_description($coursemodule, $lti, $tool, $toolconfig);
+        $data = (object)[
+            'iconurl' => $iconurl->out(),
+            'description' => $description,
+        ];
+        return $this->render_from_template('mod_lti/preview_icon', $data);
+    }
+
 }

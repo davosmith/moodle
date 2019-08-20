@@ -660,41 +660,6 @@ function mod_lti_core_calendar_provide_event_action(calendar_event $event,
 }
 
 /**
- * Generate a preview of the LTI icon.
- * @param stdClass $tool External tool
- * @param array $toolconfig Config for the external tool
- * @param cm_info $coursemodule Course module being displayed
- * @param stdClass $lti LTI instance being displayed
- * @return string HTML to display the correct icon and source for an LTI activity or tool
- */
-function lti_get_icon_preview_for_form($tool, $toolconfig, $coursemodule = null, $lti = null) {
-    global $OUTPUT;
-
-    $imgpreview = html_writer::start_div('fitem');
-
-    $imgpreview .= html_writer::start_div('fitemtitle');
-    $imgpreview .= html_writer::label(get_string('iconpreview', 'lti'), 'id_iconpreview');
-    $imgpreview .= $OUTPUT->help_icon('icon', 'lti');
-    $imgpreview .= html_writer::end_div();
-
-    $imgpreview .= html_writer::start_div('felement');
-
-    $iconurl = lti_get_custom_icon_url($coursemodule, $lti, $tool, $toolconfig);
-    if (!isset($iconurl)) {
-        $icon = new pix_icon('icon', '', 'mod_lti');
-        $iconurl = $OUTPUT->image_url($icon->pix, $icon->component);
-    }
-
-    $imgpreview .= html_writer::img($iconurl, '');
-    $imgpreview .= html_writer::span(lti_get_icon_source_description($coursemodule, $lti, $tool, $toolconfig), 'lti_icon_source');
-    $imgpreview .= html_writer::end_div();
-
-    $imgpreview .= html_writer::end_div();
-
-    return $imgpreview;
-}
-
-/**
  * Get the url for the custom icon for an LTI activity.
  * @param cm_info $coursemodule Course module being displayed
  * @param stdClass $lti LTI instance being displayed
@@ -787,7 +752,7 @@ function lti_get_activity_uploadedicon($cmid) {
     $files = $fs->get_area_files($ctx->id, 'mod_lti', 'icon', LTI_ICON_ITEMID);
 
     foreach ($files as $file) {
-        if ($file->get_filename() == '.') {
+        if ($file->get_filename() === '.') {
             continue;
         }
         $iconfile = $file;
@@ -796,11 +761,11 @@ function lti_get_activity_uploadedicon($cmid) {
     if (!isset($iconfile)) {
         return null;
     }
+    // Lti_pluginfile() ignores the filepath, so we can use it to prevent unwanted caching of images.
+    $filepath = '/'.$iconfile->get_timemodified().'/';
 
-    return moodle_url::make_pluginfile_url(
-        $ctx->id, 'mod_lti', 'icon', LTI_ICON_ITEMID,
-        $iconfile->get_filepath(), $iconfile->get_filename()
-    );
+    return moodle_url::make_pluginfile_url($ctx->id, 'mod_lti', 'icon', LTI_ICON_ITEMID,
+        $filepath, $iconfile->get_filename());
 }
 
 /**
@@ -814,7 +779,7 @@ function lti_get_tooltype_uploadedicon($typeid) {
     $files = $fs->get_area_files($ctx->id, 'mod_lti', 'icon', $typeid);
 
     foreach ($files as $file) {
-        if ($file->get_filename() == '.') {
+        if ($file->get_filename() === '.') {
             continue;
         }
         $iconfile = $file;
@@ -823,8 +788,10 @@ function lti_get_tooltype_uploadedicon($typeid) {
     if (!isset($iconfile)) {
         return null;
     }
+    // Lti_pluginfile() ignores the filepath, so we can use it to prevent unwanted caching of images.
+    $filepath = '/'.$iconfile->get_timemodified().'/';
 
-    return moodle_url::make_pluginfile_url($ctx->id, 'mod_lti', 'icon', $typeid, $file->get_filepath(), $file->get_filename());
+    return moodle_url::make_pluginfile_url($ctx->id, 'mod_lti', 'icon', $typeid, $filepath, $file->get_filename());
 }
 
 /**
@@ -847,7 +814,7 @@ function lti_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload
         return false;
     }
 
-    if ($filearea != 'icon') {
+    if ($filearea !== 'icon') {
         return false;
     }
 
