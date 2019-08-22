@@ -87,6 +87,36 @@ if ($ADMIN->fulltree) {
             1));
 
     $settings->add(new admin_setting_configcheckbox(
+            'block_myoverview/displaygroupingcustomfield',
+            get_string('customfield', 'block_myoverview'),
+            '',
+            0));
+
+    $sql = "
+        SELECT f.shortname, f.name
+          FROM {customfield_field} f
+          JOIN {customfield_category} cat ON cat.id = f.categoryid
+         WHERE cat.component = 'core_course' AND cat.area = 'course'
+         ORDER BY f.name
+    ";
+    $choices = $DB->get_records_sql_menu($sql);
+    if ($choices) {
+        $choices  = ['' => get_string('choosedots')] + $choices;
+        $settings->add(new admin_setting_configselect(
+                'block_myoverview/customfiltergrouping',
+                get_string('customfiltergrouping', 'block_myoverview'),
+                '',
+                '',
+                $choices));
+    } else {
+        $settings->add(new admin_setting_configempty(
+                'block_myoverview/customfiltergrouping',
+                get_string('customfiltergrouping', 'block_myoverview'),
+                get_string('customfiltergrouping_nofields', 'block_myoverview')));
+    }
+    $settings->hide_if('block_myoverview/customfiltergrouping', 'block_myoverview/displaygroupingcustomfield');
+
+    $settings->add(new admin_setting_configcheckbox(
             'block_myoverview/displaygroupingstarred',
             get_string('favourites', 'block_myoverview'),
             '',

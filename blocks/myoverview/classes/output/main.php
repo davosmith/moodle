@@ -131,16 +131,39 @@ class main implements renderable, templatable {
     private $displaygroupinghidden;
 
     /**
+     * Store a course grouping option setting.
+     *
+     * @var bool
+     */
+    private $displaygroupingcustomfield;
+
+    /**
+     * Store the custom field used by customfield grouping.
+     *
+     * @var string
+     */
+    private $customfiltergrouping;
+
+    /**
+     * Store the selected custom field value to filter by.
+     *
+     * @var string
+     */
+    private $customfieldvalue;
+
+    /**
      * main constructor.
      * Initialize the user preferences
      *
      * @param string $grouping Grouping user preference
      * @param string $sort Sort user preference
      * @param string $view Display user preference
+     * @param int $paging
+     * @param string $customfieldvalue
      *
      * @throws \dml_exception
      */
-    public function __construct($grouping, $sort, $view, $paging) {
+    public function __construct($grouping, $sort, $view, $paging, $customfieldvalue) {
         // Get plugin config.
         $config = get_config('block_myoverview');
 
@@ -153,27 +176,13 @@ class main implements renderable, templatable {
             // Otherwise fall back to another grouping in a reasonable order.
             // This is done to prevent one-time UI glitches in the case when a user has chosen a grouping option previously which
             // was then disabled by the admin in the meantime.
-        } else if ($config->displaygroupingall == true) {
-            $this->grouping = BLOCK_MYOVERVIEW_GROUPING_ALL;
-        } else if ($config->displaygroupingallincludinghidden == true) {
-            $this->grouping = BLOCK_MYOVERVIEW_GROUPING_ALLINCLUDINGHIDDEN;
-        } else if ($config->displaygroupinginprogress == true) {
-            $this->grouping = BLOCK_MYOVERVIEW_GROUPING_INPROGRESS;
-        } else if ($config->displaygroupingfuture == true) {
-            $this->grouping = BLOCK_MYOVERVIEW_GROUPING_FUTURE;
-        } else if ($config->displaygroupingpast == true) {
-            $this->grouping = BLOCK_MYOVERVIEW_GROUPING_PAST;
-        } else if ($config->displaygroupingstarred == true) {
-            $this->grouping = BLOCK_MYOVERVIEW_GROUPING_FAVOURITES;
-        } else if ($config->displaygroupinghidden == true) {
-            $this->grouping = BLOCK_MYOVERVIEW_GROUPING_HIDDEN;
-
-            // In this case, no grouping option is enabled and the grouping is not needed at all.
-            // But it's better not to leave $this->grouping unset for any unexpected case.
         } else {
-            $this->grouping = BLOCK_MYOVERVIEW_GROUPING_ALLINCLUDINGHIDDEN;
+            $this->grouping = $this->get_fallback_grouping($config);
         }
         unset ($groupingconfigname);
+
+        // Remember which custom field value we were using, if grouping by custom field.
+        $this->customfieldvalue = $customfieldvalue;
 
         // Check and remember the given sorting.
         $this->sort = $sort ? $sort : BLOCK_MYOVERVIEW_SORTING_TITLE;
@@ -207,6 +216,8 @@ class main implements renderable, templatable {
         $this->displaygroupingpast = $config->displaygroupingpast;
         $this->displaygroupingstarred = $config->displaygroupingstarred;
         $this->displaygroupinghidden = $config->displaygroupinghidden;
+        $this->displaygroupingcustomfield = ($config->displaygroupingcustomfield && $config->customfiltergrouping);
+        $this->customfiltergrouping = $config->customfiltergrouping;
 
         // Check and remember if the grouping selector should be shown at all or not.
         // It will be shown if more than 1 grouping option is enabled.
@@ -218,7 +229,7 @@ class main implements renderable, templatable {
                 $this->displaygroupingstarred,
                 $this->displaygroupinghidden);
         $displaygroupingselectorscount = count(array_filter($displaygroupingselectors));
-        if ($displaygroupingselectorscount > 1) {
+        if ($displaygroupingselectorscount > 1 || $this->displaygroupingcustomfield) {
             $this->displaygroupingselector = true;
         } else {
             $this->displaygroupingselector = false;
@@ -226,6 +237,41 @@ class main implements renderable, templatable {
         unset ($displaygroupingselectors, $displaygroupingselectorscount);
     }
 
+    /**
+     * Determine the most sensible fallback grouping to use (in cases where the stored selection
+     * is no longer available).
+     * @param object $config
+     * @return string
+     */
+    private function get_fallback_grouping($config) {
+        if ($config->displaygroupingall == true) {
+            return BLOCK_MYOVERVIEW_GROUPING_ALL;
+        }
+        if ($config->displaygroupingallincludinghidden == true) {
+            return BLOCK_MYOVERVIEW_GROUPING_ALLINCLUDINGHIDDEN;
+        }
+        if ($config->displaygroupinginprogress == true) {
+            return BLOCK_MYOVERVIEW_GROUPING_INPROGRESS;
+        }
+        if ($config->displaygroupingfuture == true) {
+            return BLOCK_MYOVERVIEW_GROUPING_FUTURE;
+        }
+        if ($config->displaygroupingpast == true) {
+            return BLOCK_MYOVERVIEW_GROUPING_PAST;
+        }
+        if ($config->displaygroupingstarred == true) {
+            return BLOCK_MYOVERVIEW_GROUPING_FAVOURITES;
+        }
+        if ($config->displaygroupinghidden == true) {
+            return BLOCK_MYOVERVIEW_GROUPING_HIDDEN;
+        }
+        if ($config->displaygroupingcustomfield == true) {
+            return BLOCK_MYOVERVIEW_GROUPING_CUSTOMFIELD;
+        }
+        // In this case, no grouping option is enabled and the grouping is not needed at all.
+        // But it's better not to leave $this->grouping unset for any unexpected case.
+        return BLOCK_MYOVERVIEW_GROUPING_ALLINCLUDINGHIDDEN;
+    }
 
     /**
      * Set the available layouts based on the config table settings,
@@ -293,6 +339,139 @@ class main implements renderable, templatable {
     }
 
     /**
+     * Format the display values for a checkbox field.
+     * @param object $field
+     * @param array $values
+     * @return array value => display name
+     */
+    private function format_customfield_values_checkbox($field, $values) {
+        $name = format_string($field->name);
+        return [
+            1 => $name.': '.get_string('yes'),
+            BLOCK_MYOVERVIEW_CUSTOMFIELD_EMPTY => $name.': '.get_string('no'),
+        ];
+    }
+
+    /**
+     * Format the display values for a date field.
+     * @param object $field
+     * @param array $values
+     * @return array value => display name
+     */
+    private function format_customfield_values_date($field, $values) {
+        $format = get_string('strftimedate', 'langconfig');
+        $ret = [];
+        foreach ($values as $value) {
+            if ($value) {
+                $ret[$value] = userdate($value, $format);
+            }
+        }
+        if (!$ret) {
+            return []; // If the only dates found are 0, then do not show any options.
+        }
+        $ret[BLOCK_MYOVERVIEW_CUSTOMFIELD_EMPTY] = get_string('nocustomvalue', 'block_myoverview',
+            format_string($field->name));
+        return $ret;
+    }
+
+    /**
+     * Format the display values for a select field.
+     * @param object $field
+     * @param array $values
+     * @return array value => display name
+     */
+    private function format_customfield_values_select($field, $values) {
+        $config = json_decode($field->configdata);
+        if (empty($config->options)) {
+            return [];
+        }
+        $options = array_merge([''], array_filter(array_map('trim', explode("\n", $config->options))));
+        $ret = [];
+        foreach ($values as $value) {
+            if (isset($options[$value])) {
+                $ret[$value] = $options[$value];
+            }
+        }
+        $ret[BLOCK_MYOVERVIEW_CUSTOMFIELD_EMPTY] = get_string('nocustomvalue', 'block_myoverview',
+            format_string($field->name));
+        return $ret;
+    }
+
+    /**
+     * Format the display values for a text field.
+     * @param object $field
+     * @param array $values
+     * @return array value => display name
+     */
+    private function format_customfield_values_text($field, $values) {
+        $ret = [];
+        foreach ($values as $value) {
+            $ret[$value] = $value;
+        }
+        $ret[BLOCK_MYOVERVIEW_CUSTOMFIELD_EMPTY] = get_string('nocustomvalue', 'block_myoverview',
+            format_string($field->name));
+        return $ret;
+    }
+
+    /**
+     * Format the display values for a textarea field.
+     * @param object $field
+     * @param array $values
+     * @return array value => display name
+     */
+    private function format_customfield_values_textarea($field, $values) {
+        $ret = [];
+        foreach ($values as $value) {
+            $ret[$value] = shorten_text(strip_tags($value));
+        }
+        $ret[BLOCK_MYOVERVIEW_CUSTOMFIELD_EMPTY] = get_string('nocustomvalue', 'block_myoverview',
+            format_string($field->name));
+        return $ret;
+    }
+
+    /**
+     * Get the list of values to add to the grouping dropdown
+     * @return object[] containing name, value and active fields
+     */
+    public function get_customfield_values_for_export() {
+        global $DB, $USER;
+        if (!$this->displaygroupingcustomfield) {
+            return [];
+        }
+        $field = $DB->get_record('customfield_field', ['shortname' => $this->customfiltergrouping]);
+        if (!$field) {
+            return [];
+        }
+        $courses = enrol_get_all_users_courses($USER->id, true);
+        if (!$courses) {
+            return [];
+        }
+        list($csql, $params) = $DB->get_in_or_equal(array_keys($courses), SQL_PARAMS_NAMED);
+        $select = "instanceid $csql AND fieldid = :fieldid";
+        $params['fieldid'] = $field->id;
+        $values = $DB->get_records_select_menu('customfield_data', $select, $params, 'value',
+            'DISTINCT value, value AS value2');
+        $values = array_filter($values);
+        if (!$values) {
+            return [];
+        }
+        $formatfn = 'format_customfield_values_'.$field->type;
+        if (method_exists($this, $formatfn)) {
+            $values = $this->$formatfn($field, $values);
+        }
+        $customfieldactive = ($this->grouping === BLOCK_MYOVERVIEW_GROUPING_CUSTOMFIELD);
+        $ret = [];
+        foreach ($values as $value => $name) {
+            $ret[] = (object)[
+                'name' => $name,
+                'value' => $value,
+                'active' => ($customfieldactive && ($this->customfieldvalue == $value)),
+            ];
+        }
+        return $ret;
+    }
+
+    /**
      * Export this data so it can be used as the context for a mustache template.
      *
      * @param \renderer_base $output
@@ -305,6 +484,29 @@ class main implements renderable, templatable {
 
         $nocoursesurl = $output->image_url('courses', 'block_myoverview')->out();
 
+        $customfieldvalues = $this->get_customfield_values_for_export();
+        $selectedcustomfield = '';
+        if ($this->grouping == BLOCK_MYOVERVIEW_GROUPING_CUSTOMFIELD) {
+            foreach ($customfieldvalues as $field) {
+                if ($field->value == $this->customfieldvalue) {
+                    $selectedcustomfield = $field->name;
+                    break;
+                }
+            }
+            // If the selected custom field value has not been found (possibly because the field has
+            // been changed in the settings) find a suitable fallback.
+            if (!$selectedcustomfield) {
+                $this->grouping = $this->get_fallback_grouping(get_config('block_myoverview'));
+                if ($this->grouping == BLOCK_MYOVERVIEW_GROUPING_CUSTOMFIELD) {
+                    // If the fallback grouping is still customfield, then select the first field.
+                    $firstfield = reset($customfieldvalues);
+                    if ($firstfield) {
+                        $selectedcustomfield = $firstfield->name;
+                        $this->customfieldvalue = $firstfield->value;
+                    }
+                }
+            }
+        }
         $preferences = $this->get_preferences_as_booleans();
         $availablelayouts = $this->get_formatted_available_layouts_for_export();
 
@@ -327,6 +529,11 @@ class main implements renderable, templatable {
             'displaygroupingstarred' => $this->displaygroupingstarred,
             'displaygroupinghidden' => $this->displaygroupinghidden,
             'displaygroupingselector' => $this->displaygroupingselector,
+            'displaygroupingcustomfield' => $this->displaygroupingcustomfield && $customfieldvalues,
+            'customfieldname' => $this->customfiltergrouping,
+            'customfieldvalue' => $this->customfieldvalue,
+            'customfieldvalues' => $customfieldvalues,
+            'selectedcustomfield' => $selectedcustomfield,
         ];
         return array_merge($defaultvariables, $preferences);
 
