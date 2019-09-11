@@ -22,19 +22,29 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+defined('MOODLE_INTERNAL') || die();
+
 /**
  * Unit tests for functions to support icons.
  *
  * @package mod_lti
  * @copyright 2019 Davo Smith, Synergy Learning
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class mod_lti_icon_testcase extends advanced_testcase {
+    /** @var string  */
     const ICONFILE = '/pix/moodlelogo.png';
 
     public function setUp() {
         $this->resetAfterTest();
     }
 
+    /**
+     * Configure the tool.
+     * @param bool $uploadicon
+     * @param bool $seticonurl
+     * @return array
+     */
     private function configure_tool($uploadicon = true, $seticonurl = true) {
         global $CFG;
         require_once($CFG->dirroot.'/mod/lti/lib.php');
@@ -72,6 +82,13 @@ class mod_lti_icon_testcase extends advanced_testcase {
         return [$tool, $toolconfig];
     }
 
+    /**
+     * Create an instance of the activity.
+     * @param object $tool
+     * @param bool $uploadicon
+     * @param bool $seticonurl
+     * @return array
+     */
     private function create_instance($tool, $uploadicon = true, $seticonurl = true) {
         global $CFG;
         $gen = self::getDataGenerator();

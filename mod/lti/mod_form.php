@@ -221,9 +221,11 @@ class mod_lti_mod_form extends moodleform_mod {
             $imagevalue = $output->icon_preview_for_form($tool, $toolconfig, $cm, $this->current);
             $mform->addElement('static', 'currenticon', get_string('iconpreview', 'lti'), $imagevalue);
 
-            $icon = lti_get_activity_uploadedicon($this->current->coursemodule);
-            if ($icon) {
-                $mform->addElement('checkbox', 'deleteuploadedicon', get_string('deleteuploadedicon', 'lti'));
+            if (!empty($this->current->coursemodule)) {
+                $icon = lti_get_activity_uploadedicon($this->current->coursemodule);
+                if ($icon) {
+                    $mform->addElement('checkbox', 'deleteuploadedicon', get_string('deleteuploadedicon', 'lti'));
+                }
             }
         }
 

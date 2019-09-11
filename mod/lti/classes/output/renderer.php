@@ -70,17 +70,19 @@ class renderer extends plugin_renderer_base {
      * @return string html for the icon
      */
     public function icon_preview_for_form($tool, $toolconfig, $coursemodule = null, $lti = null) {
-        $iconurl = lti_get_custom_icon_url($coursemodule, $lti, $tool, $toolconfig);
-        if (!$iconurl) {
-            $icon = new \pix_icon('icon', '', 'mod_lti');
-            $iconurl = $this->output->image_url($icon->pix, $icon->component);
-        }
-        $description = lti_get_icon_source_description($coursemodule, $lti, $tool, $toolconfig);
-        $data = (object)[
-            'iconurl' => $iconurl->out(),
-            'description' => $description,
-        ];
-        return $this->render_from_template('mod_lti/preview_icon', $data);
+        $icon = new icon_preview_for_form($tool, $toolconfig, $coursemodule, $lti);
+        return $this->render($icon);
     }
 
+    /**
+     * Render the icon preview for the form
+     *
+     * @param icon_preview_for_form $icon
+     * @return bool|string
+     * @throws \moodle_exception
+     */
+    public function render_icon_preview_for_form(icon_preview_for_form $icon) {
+        $data = $icon->export_for_template($this);
+        return $this->render_from_template('mod_lti/preview_icon', $data);
+    }
 }

@@ -749,16 +749,9 @@ function lti_get_activity_uploadedicon($cmid) {
     $ctx = context_module::instance($cmid);
 
     $fs = get_file_storage();
-    $files = $fs->get_area_files($ctx->id, 'mod_lti', 'icon', LTI_ICON_ITEMID);
-
-    foreach ($files as $file) {
-        if ($file->get_filename() === '.') {
-            continue;
-        }
-        $iconfile = $file;
-        break;
-    }
-    if (!isset($iconfile)) {
+    $files = $fs->get_area_files($ctx->id, 'mod_lti', 'icon', LTI_ICON_ITEMID, 'filepath, filename', false);
+    $iconfile = reset($files);
+    if (!$iconfile) {
         return null;
     }
     // Lti_pluginfile() ignores the filepath, so we can use it to prevent unwanted caching of images.
@@ -776,22 +769,15 @@ function lti_get_activity_uploadedicon($cmid) {
 function lti_get_tooltype_uploadedicon($typeid) {
     $ctx = context_system::instance();
     $fs = get_file_storage();
-    $files = $fs->get_area_files($ctx->id, 'mod_lti', 'icon', $typeid);
-
-    foreach ($files as $file) {
-        if ($file->get_filename() === '.') {
-            continue;
-        }
-        $iconfile = $file;
-        break;
-    }
-    if (!isset($iconfile)) {
+    $files = $fs->get_area_files($ctx->id, 'mod_lti', 'icon', $typeid, 'filepath, filename', false);
+    $iconfile = reset($files);
+    if (!$iconfile) {
         return null;
     }
     // Lti_pluginfile() ignores the filepath, so we can use it to prevent unwanted caching of images.
     $filepath = '/'.$iconfile->get_timemodified().'/';
 
-    return moodle_url::make_pluginfile_url($ctx->id, 'mod_lti', 'icon', $typeid, $filepath, $file->get_filename());
+    return moodle_url::make_pluginfile_url($ctx->id, 'mod_lti', 'icon', $typeid, $filepath, $iconfile->get_filename());
 }
 
 /**
