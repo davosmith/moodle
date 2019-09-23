@@ -414,22 +414,6 @@ class main implements renderable, templatable {
     }
 
     /**
-     * Format the display values for a textarea field.
-     * @param object $field
-     * @param array $values
-     * @return array value => display name
-     */
-    private function format_customfield_values_textarea($field, $values) {
-        $ret = [];
-        foreach ($values as $value) {
-            $ret[$value] = shorten_text(strip_tags($value));
-        }
-        $ret[BLOCK_MYOVERVIEW_CUSTOMFIELD_EMPTY] = get_string('nocustomvalue', 'block_myoverview',
-            format_string($field->name));
-        return $ret;
-    }
-
-    /**
      * Get the list of values to add to the grouping dropdown
      * @return object[] containing name, value and active fields
      */

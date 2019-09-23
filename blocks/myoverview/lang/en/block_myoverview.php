@@ -33,6 +33,7 @@ $string['aria:controls'] = 'Course overview controls';
 $string['aria:courseactions'] = 'Actions for current course';
 $string['aria:coursesummary'] = 'Course summary text:';
 $string['aria:courseprogress'] = 'Course progress:';
+$string['aria:customfield'] = 'Show {$a} courses';
 $string['aria:displaydropdown'] = 'Display drop-down menu';
 $string['aria:favourites'] = 'Show starred courses';
 $string['aria:future'] = 'Show future courses';

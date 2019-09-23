@@ -97,6 +97,7 @@ if ($ADMIN->fulltree) {
           FROM {customfield_field} f
           JOIN {customfield_category} cat ON cat.id = f.categoryid
          WHERE cat.component = 'core_course' AND cat.area = 'course'
+           AND f.type <> 'textarea'
          ORDER BY f.name
     ";
     $choices = $DB->get_records_sql_menu($sql);
