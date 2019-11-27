@@ -47,7 +47,8 @@ class mod_assign_confirm_submission_form extends moodleform {
              $data) = $this->_customdata;
 
         if ($requiresubmissionstatement) {
-            $mform->addElement('checkbox', 'submissionstatement', '', $submissionstatement);
+            $mform->addElement('checkbox', 'submissionstatement', get_string('submissionstatement', 'assign'),
+                $submissionstatement);
             $mform->addRule('submissionstatement', get_string('required'), 'required', null, 'client');
         }
 

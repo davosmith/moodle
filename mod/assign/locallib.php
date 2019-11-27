@@ -7952,7 +7952,8 @@ class assign {
 
         // Only show submission statement if we are editing our own submission.
         if ($requiresubmissionstatement && !$draftsenabled && $userid == $USER->id) {
-            $mform->addElement('checkbox', 'submissionstatement', '', $submissionstatement);
+            $mform->addElement('checkbox', 'submissionstatement', get_string('submissionstatement', 'assign'),
+                $submissionstatement);
             $mform->addRule('submissionstatement', get_string('required'), 'required', null, 'client');
         }
 
