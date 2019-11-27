@@ -22,6 +22,7 @@
     {{/element.frozen}}
     {{{element.attributes}}} >
     {{{label}}}
+    {{#required}}<abbr class="initialism text-danger" title="{{#str}}required{{/str}}">{{#pix}}req, core, {{#str}}required{{/str}}{{/pix}}</abbr>{{/required}}
 </label>
 {{#text}}
     <em>{{{.}}}</em>
