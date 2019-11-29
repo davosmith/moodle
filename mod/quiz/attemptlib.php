@@ -894,6 +894,29 @@ class quiz_attempt {
     }
 
     /**
+     * Is the current user allowed to grade this attempt.
+     * @return bool whether the grading is allowed.
+     */
+    public function is_grade_allowed() {
+        if (!$this->has_capability('mod/quiz:grade')) {
+            return false;
+        }
+
+        $cm = $this->get_cm();
+        if ($this->has_capability('moodle/site:accessallgroups') ||
+            groups_get_activity_groupmode($cm) != SEPARATEGROUPS) {
+            return true;
+        }
+
+        // Check the users have at least one group in common.
+        $teachersgroups = groups_get_activity_allowed_groups($cm);
+        $studentsgroups = groups_get_all_groups(
+            $cm->course, $this->attempt->userid, $cm->groupingid);
+        return $teachersgroups && $studentsgroups &&
+            array_intersect(array_keys($teachersgroups), array_keys($studentsgroups));
+    }
+
+    /**
      * Has the student, in this attempt, engaged with the quiz in a non-trivial way?
      * That is, is there any question worth a non-zero number of marks, where
      * the student has made some response that we have saved?
@@ -1713,7 +1736,7 @@ class quiz_attempt {
             return false;
         }
 
-        if ($reviewing && !$this->is_own_attempt() && !$this->is_review_allowed()) {
+        if ($reviewing && !$this->is_own_attempt() && !$this->is_review_allowed() && !$this->is_grade_allowed()) {
             return false;
         }
 
