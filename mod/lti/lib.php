@@ -677,7 +677,8 @@ function lti_get_custom_icon_url($coursemodule, $lti, $tool, $toolconfig) {
     if (isset($lti)) {
         if (lti_request_is_using_ssl() && !empty($lti->secureicon)) {
             return new moodle_url($lti->secureicon);
-        } else if (!empty($lti->icon)) {
+        }
+        if (!empty($lti->icon)) {
             return new moodle_url($lti->icon);
         }
     }
@@ -691,7 +692,8 @@ function lti_get_custom_icon_url($coursemodule, $lti, $tool, $toolconfig) {
     if (!empty($toolconfig)) {
         if (lti_request_is_using_ssl() && !empty($toolconfig['secureicon'])) {
             return new moodle_url($toolconfig['secureicon']);
-        } else if (!empty($toolconfig['icon'])) {
+        }
+        if (!empty($toolconfig['icon'])) {
             return new moodle_url($toolconfig['icon']);
         }
     }
@@ -731,9 +733,9 @@ function lti_get_icon_source_description($coursemodule, $lti, $tool, $toolconfig
 
     if (isset($toolconfig)) {
         if (lti_request_is_using_ssl() && !empty($toolconfig['secureicon'])) {
-            return get_string('iconsource_toolsecureurl', 'lti', $tool->name);
+            return get_string('iconsource_toolsecureurl', 'lti');
         } else if (!empty($toolconfig['icon'])) {
-            return get_string('iconsource_toolurl', 'lti', $tool->name);
+            return get_string('iconsource_toolurl', 'lti');
         }
     }
 

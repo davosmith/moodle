@@ -233,17 +233,9 @@ class mod_lti_edit_types_form extends moodleform {
         $mform->addElement('hidden', 'oldicon');
         $mform->setType('oldicon', PARAM_URL);
 
-        $mform->addElement('text', 'lti_icon', get_string('icon_url', 'lti'), array('size' => '64'));
-        $mform->setType('lti_icon', PARAM_URL);
-        $mform->addHelpButton('lti_icon', 'icon_url', 'lti');
-
-        $mform->addElement('text', 'lti_secureicon', get_string('secure_icon_url', 'lti'), array('size' => '64'));
-        $mform->setType('lti_secureicon', PARAM_URL);
-        $mform->addHelpButton('lti_secureicon', 'secure_icon_url', 'lti');
-
         // Prepare file upload.
         $filemanageroptions = array(
-            'return_types' => 3,
+            'return_types' => FILE_EXTERNAL + FILE_INTERNAL,
             'accepted_types' => 'web_image',
             'subdirs' => 0,
             'maxbytes' => 0,
@@ -251,6 +243,14 @@ class mod_lti_edit_types_form extends moodleform {
             'mainfile' => true
         );
         $mform->addElement('filepicker', 'uploadedicon', get_string('icon'), null, $filemanageroptions);
+
+        $mform->addElement('text', 'lti_icon', get_string('icon_url', 'lti'), array('size' => '64'));
+        $mform->setType('lti_icon', PARAM_URL);
+        $mform->addHelpButton('lti_icon', 'icon_url', 'lti');
+
+        $mform->addElement('text', 'lti_secureicon', get_string('secure_icon_url', 'lti'), array('size' => '64'));
+        $mform->setType('lti_secureicon', PARAM_URL);
+        $mform->addHelpButton('lti_secureicon', 'secure_icon_url', 'lti');
 
         if (!$istool) {
             // Display the lti advantage services.

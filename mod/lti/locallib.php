@@ -2193,10 +2193,11 @@ function lti_get_configured_types($courseid, $sectionreturn = 0) {
             $type->help     = clean_param($trimmeddescription, PARAM_NOTAGS);
             $type->helplink = get_string('modulename_shortcut_link', 'lti');
         }
-        if (empty($ltitype->icon)) {
+        $icon = lti_get_custom_icon_url(null, null, $ltitype, null);
+        if (!$icon) {
             $type->icon = $OUTPUT->pix_icon('icon', '', 'lti', array('class' => 'icon'));
         } else {
-            $type->icon = html_writer::empty_tag('img', array('src' => $ltitype->icon, 'alt' => $ltitype->name, 'class' => 'icon'));
+            $type->icon = html_writer::empty_tag('img', array('src' => $icon, 'alt' => $ltitype->name, 'class' => 'icon'));
         }
         $type->link = new moodle_url('/course/modedit.php', array('add' => 'lti', 'return' => 0, 'course' => $courseid,
             'sr' => $sectionreturn, 'typeid' => $ltitype->id));
@@ -3695,29 +3696,6 @@ function lti_get_fqid($contexts, $id) {
 
     return $id;
 
-}
-
-/**
- * Returns the icon for the given tool type
- *
- * @param stdClass $type The tool type
- *
- * @return string The url to the tool type's corresponding icon
- */
-function get_tool_type_icon_url(stdClass $type) {
-    global $OUTPUT;
-
-    $iconurl = $type->secureicon;
-
-    if (empty($iconurl)) {
-        $iconurl = $type->icon;
-    }
-
-    if (empty($iconurl)) {
-        $iconurl = $OUTPUT->image_url('icon', 'lti')->out();
-    }
-
-    return $iconurl;
 }
 
 /**

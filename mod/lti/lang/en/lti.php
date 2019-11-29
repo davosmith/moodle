@@ -217,14 +217,15 @@ $string['icon'] = 'Icon';
 $string['icon_help'] = 'The icon is displayed next to the activity name on the course page. The icon used is determined by checking first whether there is an uploaded icon in the activity settings, or an icon URL, and then repeating the checks in the external tool configuration site administration settings.';
 $string['icon_url'] = 'Icon URL';
 $string['icon_url_help'] = 'The icon URL allows the icon that shows up in the course listing for this activity to be modified. Instead of using the default
-LTI icon, an icon which conveys the type of activity may be specified.';
+LTI icon, an icon which conveys the type of activity may be specified.
+This is only used if an icon has not been uploaded, above.';
 $string['iconpreview'] = 'Icon preview';
 $string['iconsource_activityupload'] = 'The icon used is the uploaded icon in the activity settings.';
 $string['iconsource_activitysecureurl'] = 'The icon used is the secure icon URL specified in the activity settings.';
 $string['iconsource_activityurl'] = 'The icon used is the icon URL specified in the activity settings.';
 $string['iconsource_default'] = 'The icon used is the default external tool icon.';
-$string['iconsource_toolupload'] = 'The icon used is the uploaded icon in the {$a} external tool configuration.';
-$string['iconsource_toolsecureurl'] = 'The icon used is the secure icon URL specified in the {$a} external tool configuration.';
+$string['iconsource_toolupload'] = 'The icon used is the uploaded icon in the external tool configuration.';
+$string['iconsource_toolsecureurl'] = 'The icon used is the secure icon URL specified in the external tool configuration.';
 $string['iconsource_toolurl'] = 'The icon used is the icon URL specified in the {$a} external tool configuration.';
 $string['id'] = 'ID';
 $string['indicator:cognitivedepth'] = 'LTI cognitive';
@@ -449,7 +450,8 @@ $string['return_to_course'] = 'Click <a href="{$a->link}" target="_top">here</a>
 $string['saveallfeedback'] = 'Save all my feedback';
 $string['search:activity'] = 'External tool - activity information';
 $string['secure_icon_url'] = 'Secure icon URL';
-$string['secure_icon_url_help'] = 'Similar to the icon URL, but used when the site is accessed securely through SSL. This field is to prevent the browser from displaying a warning about an insecure image.';
+$string['secure_icon_url_help'] = 'Similar to the icon URL, but used when the site is accessed securely through SSL. This field is to prevent the browser from displaying a warning about an insecure image.
+This is only used if an icon has not been uploaded, above.';
 $string['secure_launch_url'] = 'Secure tool URL';
 $string['secure_launch_url_help'] = 'Similar to the tool URL, but used instead of the tool URL if high security is required. Moodle will use the secure tool URL instead of the tool URL if the Moodle site is accessed through SSL, or if the tool configuration is set to always launch through SSL.
 
