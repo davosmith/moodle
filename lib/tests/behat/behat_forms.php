@@ -734,10 +734,14 @@ class behat_forms extends behat_base {
 
     /**
      * Visit the fixture page for testing repeat defaults.
-     * @Given /^I am on the repeat defaults form page$/
+     * @Given /^I am on fixture page "(?P<url_string>(?:[^"]|\\")*)"$/
+     * @param string $url local path to fixture page
      */
-    public function i_am_on_the_repeat_defaults_form_page() {
-        $url = new moodle_url('/lib/form/tests/behat/fixtures/repeat_defaults_form.php');
-        $this->getSession()->visit($this->locate_path($url->out_as_local_url(false)));
+    public function i_am_on_fixture_page($url) {
+        $fixtureregex = '|^/[a-z0-9_\-/]*/tests/behat/fixtures/[a-z0-9_\-]*\.php$|';
+        if (!preg_match($fixtureregex, $url)) {
+            throw new coding_exception("URL {$url} is not a fixture URL");
+        }
+        $this->getSession()->visit($this->locate_path($url));
     }
 }
